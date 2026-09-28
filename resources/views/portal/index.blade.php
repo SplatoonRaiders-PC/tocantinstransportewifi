@@ -513,7 +513,7 @@
 
                         <div id="interval-access-status" hidden class="mb-3 rounded-xl border border-green/30 bg-green-pale px-3 py-2 text-sm" aria-live="polite">
                             <p data-interval-message></p>
-                            <button type="button" hidden class="mt-2 font-bold text-green-dark underline">Verificar diária</button>
+                            <button type="button" hidden class="mt-2 font-bold text-green-dark underline">Verificar meu plano</button>
                         </div>
                         <div class="space-y-3" id="wifi-plan-options" role="radiogroup" aria-label="Escolha seu plano de WiFi">
                             @if($plan_short_enabled ?? true)
@@ -1288,7 +1288,7 @@
             const nameEl = document.getElementById('selected-plan-name');
             if (priceEl) priceEl.textContent = formatted;
             if (nameEl) nameEl.textContent = interval
-                ? `${name}: ${plan.interval_start.split('-').reverse().join('/')} a ${plan.interval_end.split('-').reverse().join('/')} · ${duration}h por dia`
+                ? `${name}: ${plan.interval_start.split('-').reverse().join('/')} a ${plan.interval_end.split('-').reverse().join('/')} · ${duration} horas seguidas`
                 : `${name} ${suffix}`;
         }
 

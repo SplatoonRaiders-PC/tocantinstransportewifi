@@ -155,12 +155,40 @@ class PaymentController extends Controller
             }
             }
 
-            if ($intervalQuote && $user->payments()->where('status', 'completed')
-                ->where('payment_data->plan_type', 'interval')
-                ->where('payment_data->interval->start', '<=', $intervalQuote['interval']['end'])
-                ->where('payment_data->interval->end', '>=', $intervalQuote['interval']['start'])->exists()) {
-                DB::rollBack();
-                return response()->json(['success' => false, 'message' => 'Você já possui um intervalo pago nessas datas. Escolha outras datas ou use sua diária.'], 422);
+            if ($intervalQuote) {
+                // Plano de vários dias ainda em uso: só compra de novo depois que expirar.
+                $activeInterval = \App\Models\IntervalAccessDay::where('user_id', $user->id)
+                    ->where('expires_at', '>', now())
+                    ->whereHas('payment', fn ($q) => $q->where('status', 'completed'))
+                    ->orderByDesc('expires_at')->first();
+                if ($activeInterval) {
+                    DB::rollBack();
+                    return response()->json(['success' => false, 'message' => 'Você já tem internet ativa até '
+                        .$activeInterval->expires_at->format('d/m/Y H:i').'. Compre de novo quando ela terminar.'], 422);
+                }
+
+                $newStart = $intervalQuote['interval']['start'];
+                $newEnd = $intervalQuote['interval']['end'];
+                $overlaps = $user->payments()->where('status', 'completed')
+                    ->where('payment_data->plan_type', 'interval')
+                    ->where(function ($q) use ($newStart, $newEnd) {
+                        // Plano contínuo pago e ainda não iniciado, com datas sobrepostas.
+                        $q->where(function ($c) use ($newStart, $newEnd) {
+                            $c->where('payment_data->interval->mode', \App\Services\IntervalPlanService::MODE_CONTINUOUS)
+                                ->whereNotIn('id', \App\Models\IntervalAccessDay::query()->select('payment_id'))
+                                ->where('payment_data->interval->start', '<', $newEnd)
+                                ->where('payment_data->interval->end', '>', $newStart);
+                        })->orWhere(function ($l) use ($newStart, $newEnd) {
+                            // Pagamento antigo (uma diária por data), regra de antes.
+                            $l->whereNull('payment_data->interval->mode')
+                                ->where('payment_data->interval->start', '<=', $newEnd)
+                                ->where('payment_data->interval->end', '>=', $newStart);
+                        });
+                    })->exists();
+                if ($overlaps) {
+                    DB::rollBack();
+                    return response()->json(['success' => false, 'message' => 'Você já possui um plano pago nessas datas. Escolha outras datas.'], 422);
+                }
             }
 
             // O passageiro pode autorizar atualizações na própria etapa de
@@ -574,7 +602,13 @@ class PaymentController extends Controller
                 $interval = $payment->payment_data['interval'];
                 $start = \Carbon\Carbon::parse($interval['start'])->format('d/m/Y');
                 $end = \Carbon\Carbon::parse($interval['end'])->format('d/m/Y');
-                $message = "Pagamento confirmado!\n\nOi {$nome}! Recebemos seu PIX de R$ {$amount}.\n\n"
+                $message = \App\Services\IntervalPlanService::isContinuous($payment)
+                    ? "Pagamento confirmado!\n\nOi {$nome}! Recebemos seu PIX de R$ {$amount}.\n\n"
+                        . "Plano de {$interval['days']} dia(s): {$interval['total_hours']} horas seguidas de internet ({$start} a {$end}). "
+                        . "Se você já está no ônibus, a internet libera agora e fica ativa direto até o fim do período, sem precisar entrar no portal todo dia. "
+                        . "Se comprou para outra data, o plano começa quando você se conectar no Wi-Fi do ônibus.\n\n"
+                        . 'Portal: '.url('/')."\n\nPara parar as atualizações de pagamento, responda PARAR."
+                    : "Pagamento confirmado!\n\nOi {$nome}! Recebemos seu PIX de R$ {$amount}.\n\n"
                     . "Intervalo: {$start} a {$end}, com {$interval['hours_per_day']}h corridas por dia. "
                     . "Se o pagamento ocorrer nas datas contratadas, a primeira diária começa na confirmação do PIX. "
                     . "As próximas diárias, ou compras antecipadas, começam ao abrir o portal no Wi-Fi do ônibus. Dias não usados não acumulam.\n\n"

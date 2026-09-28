@@ -15,7 +15,20 @@ use Illuminate\Validation\ValidationException;
 
 class IntervalPlanService
 {
-    public const FIRST_DAY_POLICY = 'payment-confirmation-v2';
+    public const FIRST_DAY_POLICY = 'continuous-v3';
+
+    /**
+     * Regra atual (mode "continuous"): N dias = N x 24h seguidas, liberadas de
+     * uma vez só. Começa na confirmação do PIX (ou, em compra antecipada, quando
+     * o passageiro abre o portal no ônibus a partir da data inicial).
+     * Pagamentos antigos (sem "mode") mantêm a regra de uma diária por data.
+     */
+    public const MODE_CONTINUOUS = 'continuous';
+
+    public static function isContinuous(Payment $payment): bool
+    {
+        return data_get($payment->payment_data, 'interval.mode') === self::MODE_CONTINUOUS;
+    }
 
     /** First eligible day starts at payment confirmation; later days start in the portal. */
     public function activatePaidCheckout(Payment $payment): array
@@ -29,6 +42,10 @@ class IntervalPlanService
             $payment = Payment::whereKey($payment->id)->lockForUpdate()->firstOrFail();
             if ($payment->status !== 'completed' || ! self::isInterval($payment) || ! $payment->paid_at) {
                 return $this->result('none', 'Pagamento ainda não confirmado.');
+            }
+
+            if (self::isContinuous($payment)) {
+                return $this->activateContinuousCheckout($user, $payment);
             }
 
             $start = $payment->paid_at->copy();
@@ -81,12 +98,15 @@ class IntervalPlanService
         }
         $data = Validator::make($input, [
             'interval_start' => 'required|date_format:Y-m-d|after_or_equal:today|before_or_equal:'.now()->addYear()->toDateString(),
-            'interval_end' => 'required|date_format:Y-m-d|after_or_equal:interval_start',
+            // O último dia é quando o acesso termina: 28 → 30 = 2 dias = 48h.
+            'interval_end' => 'required|date_format:Y-m-d|after:interval_start',
             'interval_hours' => 'required|integer|in:24',
+        ], [
+            'interval_end.after' => 'O último dia precisa ser depois do primeiro dia.',
         ])->validate();
         $start = CarbonImmutable::parse($data['interval_start']);
         $end = CarbonImmutable::parse($data['interval_end']);
-        $days = (int) $start->diffInDays($end) + 1;
+        $days = (int) $start->diffInDays($end);
         if ($days < 1 || $days > $settings['max_days']) {
             throw ValidationException::withMessages(['interval_end' => "Escolha de 1 a {$settings['max_days']} dias."]);
         }
@@ -98,9 +118,11 @@ class IntervalPlanService
             'plan_suffix' => "/ {$days} dia(s)",
             'duration_hours' => (int) $data['interval_hours'],
             'interval' => [
+                'mode' => self::MODE_CONTINUOUS,
                 'start' => $data['interval_start'],
                 'end' => $data['interval_end'],
                 'days' => $days,
+                'total_hours' => $days * 24,
                 'hours_per_day' => 24,
                 'base_price_cents' => $dailyCents,
                 'daily_price_cents' => $dailyCents,
@@ -127,11 +149,37 @@ class IntervalPlanService
                 ->orderByDesc('expires_at')->first();
             if ($day) {
                 $this->restoreDay($lockedUser, $day);
-                return $this->result('active', 'Sua diária está ativa. Liberação em até 30 segundos.', $day);
+                return $this->result('active', 'Seu acesso está ativo. Liberação em até 30 segundos.', $day);
             }
 
+            // Regra atual: plano contínuo pago e ainda não iniciado.
+            $continuous = Payment::where('user_id', $user->id)->where('status', 'completed')
+                ->where('payment_data->plan_type', 'interval')
+                ->where('payment_data->interval->mode', self::MODE_CONTINUOUS)
+                ->where('payment_data->interval->end', '>', $today)
+                ->whereNotIn('id', IntervalAccessDay::query()->select('payment_id'))
+                ->orderBy('payment_data->interval->start')->orderBy('id')->first();
+            if ($continuous) {
+                $interval = $continuous->payment_data['interval'];
+                if ($interval['start'] > $today) {
+                    $date = CarbonImmutable::parse($interval['start'])->format('d/m/Y');
+                    return $this->result('scheduled', "Plano pago. Começa a partir de {$date}, quando você se conectar no Wi-Fi do ônibus.");
+                }
+                if (in_array($lockedUser->status, ['connected', 'active']) && $lockedUser->expires_at?->isFuture()) {
+                    return $this->result('existing_access', 'Você já tem internet ativa. Quando ela terminar, abra este portal para começar seu plano de vários dias.');
+                }
+                if (! $startNewDay) {
+                    return $this->result('ready', 'Plano pago. Abra o portal conectado ao Wi-Fi do ônibus para começar.');
+                }
+                $day = $this->startDay($lockedUser, $continuous, $now);
+
+                return $this->result('active', 'Seu plano começou. Liberação em até 30 segundos.', $day);
+            }
+
+            // Pagamentos antigos (sem "mode"): uma diária por data, como antes.
             $payment = Payment::where('user_id', $user->id)->where('status', 'completed')
                 ->where('payment_data->plan_type', 'interval')
+                ->whereNull('payment_data->interval->mode')
                 ->where('payment_data->interval->end', '>=', $today)
                 ->orderBy('payment_data->interval->start')->orderBy('id')->first();
             if (! $payment) {
@@ -160,12 +208,46 @@ class IntervalPlanService
         });
     }
 
+    /**
+     * Plano contínuo: libera todo o período pago de uma vez, a partir da
+     * confirmação do PIX. Webhook repetido ou reconciliação só restauram.
+     */
+    private function activateContinuousCheckout(User $user, Payment $payment): array
+    {
+        $start = $payment->paid_at->copy();
+        $interval = $payment->payment_data['interval'];
+
+        if (IntervalAccessDay::where('payment_id', $payment->id)->exists()
+            // Compra antecipada: começa no portal a partir da data inicial.
+            || $start->isFuture() || $start->toDateString() < $interval['start']
+            // Acesso atual (plano normal ou liberação manual) não é encurtado nem consumido.
+            || (in_array($user->status, ['connected', 'active']) && $user->expires_at?->isFuture())
+            || IntervalAccessDay::where('user_id', $user->id)->where('access_date', $start->toDateString())->exists()
+            || ! $start->copy()->addHours(self::periodHours($payment))->isFuture()) {
+            return $this->access($user);
+        }
+
+        $day = $this->startDay($user, $payment, $start);
+
+        return $this->result('active', 'Pagamento confirmado. Sua internet está ativa.', $day);
+    }
+
+    /** Horas liberadas por ativação: período inteiro (contínuo) ou uma diária (antigo). */
+    private static function periodHours(Payment $payment): int
+    {
+        $interval = $payment->payment_data['interval'];
+
+        return self::isContinuous($payment)
+            ? (int) ($interval['total_hours'] ?? $interval['days'] * $interval['hours_per_day'])
+            : (int) $interval['hours_per_day'];
+    }
+
     private function startDay(User $user, Payment $payment, \Carbon\CarbonInterface $start): IntervalAccessDay
     {
         $day = IntervalAccessDay::create([
             'user_id' => $user->id, 'payment_id' => $payment->id,
             'access_date' => $start->toDateString(), 'started_at' => $start,
-            'expires_at' => $start->copy()->addHours($payment->payment_data['interval']['hours_per_day']),
+            'expires_at' => $start->copy()->addHours(self::periodHours($payment)),
         ]);
         Session::create([
             'user_id' => $user->id, 'payment_id' => $payment->id,

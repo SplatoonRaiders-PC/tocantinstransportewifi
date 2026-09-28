@@ -6,22 +6,33 @@
         timeZone, day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
     }).format(value).replace(',', '');
 
-    const updatePaymentWindow = (fields, start) => {
+    const dayLabel = days => `${days} ${days === 1 ? 'dia' : 'dias'}`;
+    const dateLabel = value => value.split('-').reverse().join('/');
+
+    // N dias = N x 24 horas seguidas, liberadas de uma vez (sem ativar todo dia).
+    const updatePaymentWindow = (fields, start, days, valid) => {
         const title = document.querySelector('[data-payment-window-title]');
         const range = document.querySelector('[data-payment-window]');
         const note = document.querySelector('[data-payment-window-note]');
         if (!title || !range || !note) return;
+        if (!valid) {
+            title.textContent = 'Escolha as datas';
+            range.textContent = 'O último dia precisa ser depois do primeiro.';
+            note.textContent = 'Cada dia equivale a 24 horas de internet.';
+            return;
+        }
+        const hours = days * 24;
         if (start !== fields.dataset.today) {
-            title.textContent = 'Sua primeira diária na data escolhida:';
-            range.textContent = `Na data escolhida, a partir do horário em que você acessar.`;
-            note.textContent = 'Cada diária termina 24 horas depois da ativação.';
+            title.textContent = `Seu plano começa em ${dateLabel(start)}:`;
+            range.textContent = `${hours} horas seguidas, a partir de quando você se conectar no ônibus.`;
+            note.textContent = 'Não precisa entrar no portal todo dia.';
             return;
         }
         const startsAt = new Date();
-        const endsAt = new Date(startsAt.getTime() + 24 * 60 * 60 * 1000);
-        title.textContent = 'Pagando agora, sua primeira diária:';
+        const endsAt = new Date(startsAt.getTime() + hours * 60 * 60 * 1000);
+        title.textContent = 'Pagando agora, sua internet fica ativa:';
         range.textContent = `De ${dateTime(startsAt, fields.dataset.timezone)} até ${dateTime(endsAt, fields.dataset.timezone)}`;
-        note.textContent = 'Começa na confirmação do PIX e dura 24 horas corridas.';
+        note.textContent = `Começa na confirmação do PIX. São ${hours} horas seguidas, sem precisar entrar de novo.`;
     };
 
     window.IntervalPlan = {
@@ -30,19 +41,23 @@
             const start = document.getElementById('interval-start').value;
             const end = document.getElementById('interval-end').value;
             const hours = 24;
-            const days = Math.round((dateNumber(end) - dateNumber(start)) / 86400000) + 1;
+            // 28/09 → 30/09 = 2 dias (48h). O último dia é quando o acesso termina.
+            const days = Math.round((dateNumber(end) - dateNumber(start)) / 86400000);
             const valid = Number.isFinite(days) && days >= 1 && days <= Number(fields.dataset.maxDays)
                 && start >= fields.dataset.today;
             const dailyCents = Number(fields.dataset.dailyCents);
             const totalCents = valid ? dailyCents * days : 0;
-            updatePaymentWindow(fields, start);
+            updatePaymentWindow(fields, start, days, valid);
             document.getElementById('interval-summary').textContent = valid
-                ? `${days} dias · Total ${money(totalCents)}` : '';
+                ? `${dayLabel(days)} (${days * 24} horas) · Total ${money(totalCents)}` : '';
             const error = document.getElementById('interval-error');
-            error.textContent = valid ? '' : `Escolha de 1 a ${fields.dataset.maxDays} dias.`;
+            error.textContent = valid ? ''
+                : (Number.isFinite(days) && days < 1 ? 'O último dia precisa ser depois do primeiro dia.'
+                    : `Escolha de 1 a ${fields.dataset.maxDays} dias.`);
             error.classList.toggle('hidden', valid);
             document.querySelector('#interval-plan-option [data-plan-price-display]').textContent = valid ? money(totalCents) : '--';
-            return { amount: totalCents / 100, duration: hours, name: 'Plano por intervalo', suffix: `/ ${days || 0} dia(s)`,
+            return { amount: totalCents / 100, duration: valid ? days * hours : hours, days: valid ? days : 0,
+                name: 'Plano por intervalo', suffix: `/ ${dayLabel(valid ? days : 0)}`,
                 plan_type: 'interval', interval_start: start, interval_end: end, interval_hours: hours, valid };
         },
         payload() {
@@ -72,7 +87,7 @@
                     if (!response.ok) throw new Error('interval_access_unavailable');
                     result = await response.json();
                 } catch (_) {
-                    result = { state: 'error', message: 'Não foi possível consultar suas diárias. Tente novamente.' };
+                    result = { state: 'error', message: 'Não foi possível consultar seu plano. Tente novamente.' };
                 } finally {
                     clearTimeout(timeout);
                 }
@@ -99,10 +114,11 @@
         const fields = document.getElementById('interval-plan-fields');
         fields?.addEventListener('change', event => {
             if (event.target.id === 'interval-start' && Number.isFinite(dateNumber(event.target.value))) {
+                // Último dia: no mínimo o dia seguinte (1 dia = 24h), no máximo o limite de dias.
                 const end = document.getElementById('interval-end');
-                const minimum = event.target.value;
+                const minimum = new Date(dateNumber(event.target.value) + 86400000).toISOString().slice(0, 10);
                 end.min = minimum;
-                end.max = new Date(dateNumber(event.target.value) + (Number(fields.dataset.maxDays) - 1) * 86400000).toISOString().slice(0, 10);
+                end.max = new Date(dateNumber(event.target.value) + Number(fields.dataset.maxDays) * 86400000).toISOString().slice(0, 10);
                 if (!end.value || end.value < minimum) end.value = minimum;
             }
             const card = document.getElementById('interval-plan-option');
@@ -121,7 +137,7 @@
         window.setInterval?.(() => {
             const card = document.getElementById('interval-plan-option');
             if (card?.classList.contains('plan-card-selected')) {
-                updatePaymentWindow(fields, document.getElementById('interval-start').value);
+                window.IntervalPlan.selection(); // mantém o horário "De ... até ..." atualizado
             }
         }, 30000);
     });

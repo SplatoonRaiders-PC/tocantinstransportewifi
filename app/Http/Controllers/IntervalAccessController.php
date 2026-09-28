@@ -43,7 +43,7 @@ class IntervalAccessController extends Controller
         }
         $result = $plans->access($user, $onBus);
         if ($result['state'] === 'ready' && ! $onBus) {
-            $result['message'] = 'Conecte ao Wi-Fi do ônibus e aguarde a identificação do aparelho para iniciar sua diária.';
+            $result['message'] = 'Conecte ao Wi-Fi do ônibus e aguarde a identificação do aparelho para começar seu plano.';
         }
 
         return response()->json($result)->header('Cache-Control', 'no-store');

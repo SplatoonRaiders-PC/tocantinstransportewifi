@@ -16,7 +16,7 @@
 
         <div id="interval-access-status" hidden class="mb-4 border-l-4 border-green-600 bg-green-50 px-4 py-3 text-sm" aria-live="polite">
             <p data-interval-message></p>
-            <button type="button" hidden class="mt-2 font-bold text-green-700 underline">Verificar diária</button>
+            <button type="button" hidden class="mt-2 font-bold text-green-700 underline">Verificar meu plano</button>
         </div>
 
         @if (session('success'))

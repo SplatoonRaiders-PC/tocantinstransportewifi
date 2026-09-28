@@ -1441,7 +1441,7 @@ class WiFiPortal {
             : data.qr_code.amount;
         const selectedPlan = window.WIFI_SELECTED_PLAN || {};
         const planLabel = selectedPlan.plan_type === 'interval'
-            ? 'Vários dias · 24 horas por dia'
+            ? `${selectedPlan.days || 1} ${Number(selectedPlan.days) === 1 ? 'dia' : 'dias'} de internet (${(selectedPlan.days || 1) * 24} horas)`
             : (selectedPlan.duration
                 ? `${selectedPlan.duration} ${Number(selectedPlan.duration) === 1 ? 'hora' : 'horas'} de internet`
                 : 'Internet no ônibus');
@@ -1693,7 +1693,8 @@ class WiFiPortal {
         // Mostrar passo 1 (QR Code) direto
         if (data.interval) {
             const summary = document.getElementById('pix-interval-summary');
-            summary.textContent = `${data.interval.start.split('-').reverse().join('/')} a ${data.interval.end.split('-').reverse().join('/')} · ${data.interval.hours_per_day}h por dia · ${data.interval.days} dias`;
+            const intervalDays = Number(data.interval.days) || 1;
+            summary.textContent = `${data.interval.start.split('-').reverse().join('/')} a ${data.interval.end.split('-').reverse().join('/')} · ${intervalDays} ${intervalDays === 1 ? 'dia' : 'dias'} (${intervalDays * 24} horas seguidas)`;
             summary.classList.remove('hidden');
         }
         document.getElementById('step-1-content').classList.remove('hidden');
@@ -2378,7 +2379,7 @@ class WiFiPortal {
                         clearInterval(this.manualCheckInterval);
                         this.closePixModal();
                         this.pixPaymentConfirmed = true;
-                        this.showSuccessMessage('Pagamento confirmado. ' + (access.message || 'Abra o portal no Wi-Fi para iniciar sua diária.'));
+                        this.showSuccessMessage('Pagamento confirmado. ' + (access.message || 'Abra o portal no Wi-Fi para começar seu plano.'));
                         return;
                     }
                 }

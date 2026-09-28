@@ -206,7 +206,7 @@
                         @error('plan_interval_price_24h')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
                     </div>
                 </div>
-                <p class="text-sm text-gray-600 mt-3">O plano por intervalo oferece somente diárias de 24 horas corridas. As datas inicial e final estão incluídas. Cada diária começa ao abrir o portal no Wi-Fi do ônibus, inclusive se atravessar a meia-noite. Dias não utilizados não acumulam.</p>
+                <p class="text-sm text-gray-600 mt-3">Cada dia do plano vale 24 horas seguidas. O passageiro escolhe o primeiro e o último dia: de 28 a 30 = 2 dias = 48 horas. O acesso é liberado de uma vez na confirmação do PIX e fica ativo direto até o fim do período, sem ativar todo dia. Compras para outra data começam quando o passageiro se conecta no Wi-Fi do ônibus. Depois que expira, ele compra de novo.</p>
             </section>
 
             <!-- Card: Desconto por Vídeo -->
