@@ -1166,8 +1166,8 @@
                     <label class="flex items-start gap-3 rounded-xl bg-emerald-50 border-2 border-emerald-200 p-3 cursor-pointer has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-100/60 transition-colors">
                         <input type="checkbox" id="whatsapp-payment-opt-in" name="whatsapp_payment_opt_in" value="1" class="mt-0.5 h-5 w-5 flex-shrink-0 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
                         <span class="leading-snug">
-                            <span class="block text-[14px] font-bold text-emerald-900">📲 Receber o comprovante e o aviso de liberação no WhatsApp</span>
-                            <span class="block text-[12px] text-emerald-800 mt-1">Só sobre este pagamento: a confirmação e, se você não concluir, um único lembrete da <strong>Tocantins Transporte</strong>. Para parar, responda <strong>PARAR</strong>.</span>
+                            <span class="block text-[14px] font-bold text-emerald-900">📲 Receber comprovante no WhatsApp</span>
+                            <span class="block text-[12px] text-emerald-800 mt-0.5">Confirmação e 1 lembrete se não concluir. Responda <strong>PARAR</strong> para sair.</span>
                         </span>
                     </label>
                     <button type="submit" id="registration-submit-btn" class="connect-button w-full text-white font-bold py-3.5 rounded-xl shadow-md text-sm">
@@ -1194,8 +1194,8 @@
                 <label class="flex items-start gap-3 rounded-xl bg-emerald-50 border-2 border-emerald-200 p-3 mb-4 cursor-pointer has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-100/60 transition-colors">
                     <input type="checkbox" id="whatsapp-payment-opt-in-payment" value="1" class="mt-0.5 h-5 w-5 flex-shrink-0 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
                     <span class="leading-snug">
-                        <span class="block text-[14px] font-bold text-emerald-900">📲 Receber o comprovante e o aviso de liberação no WhatsApp</span>
-                        <span class="block text-[12px] text-emerald-800 mt-1">Só sobre este pagamento: a confirmação e, se você não concluir, um único lembrete. Para parar, responda <strong>PARAR</strong>.</span>
+                        <span class="block text-[14px] font-bold text-emerald-900">📲 Receber comprovante no WhatsApp</span>
+                        <span class="block text-[12px] text-emerald-800 mt-0.5">Confirmação e 1 lembrete se não concluir. Responda <strong>PARAR</strong> para sair.</span>
                     </span>
                 </label>
                 <button data-payment="pix" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition-colors shadow-md text-sm">

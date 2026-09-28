@@ -1,6 +1,6 @@
 @if($interval_plan['enabled'] ?? false)
     <div class="relative pt-3">
-        <div class="plan-tag left-4 bg-sky-100 text-sky-800 ring-1 ring-sky-200">🧳 Viagens e turismo</div>
+        <div class="plan-tag left-4 bg-sky-100 text-sky-800 ring-1 ring-sky-200">🧳 Turismo</div>
         <button type="button" id="interval-plan-option" data-plan-option data-plan-type="interval"
             data-plan-price="{{ $interval_plan['price_24h'] }}" data-plan-duration="24"
             data-plan-name="Plano por intervalo" data-plan-suffix="/ 1 dia"
