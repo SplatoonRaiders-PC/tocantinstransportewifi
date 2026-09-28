@@ -1,10 +1,11 @@
 @if($interval_plan['enabled'] ?? false)
-    <div>
+    <div class="relative pt-3">
+        <div class="plan-tag left-4 bg-sky-100 text-sky-800 ring-1 ring-sky-200">🧳 Viagens e turismo</div>
         <button type="button" id="interval-plan-option" data-plan-option data-plan-type="interval"
             data-plan-price="{{ $interval_plan['price_24h'] }}" data-plan-duration="24"
             data-plan-name="Plano por intervalo" data-plan-suffix="/ 1 dia"
             aria-controls="interval-plan-fields" aria-expanded="false"
-            class="wifi-plan-card flex w-full items-center gap-3 border-2 border-gray-200 bg-white px-4 py-3.5 text-left hover:border-green/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-green/30">
+            class="wifi-plan-card flex w-full items-center gap-3 border-2 border-gray-200 bg-white px-4 pt-5 pb-3.5 text-left hover:border-green/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-green/30">
             <span data-plan-radio class="h-5 w-5 rounded-full border-2 border-gray-300 bg-white flex-shrink-0 transition-all duration-200"></span>
             <span class="min-w-0 flex-1">
                 <span class="block text-base font-extrabold text-ink leading-tight">Vários dias</span>

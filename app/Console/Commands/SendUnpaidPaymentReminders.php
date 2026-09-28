@@ -8,6 +8,7 @@ use App\Models\WhatsappMessage;
 use App\Models\WhatsappOptOut;
 use App\Models\WhatsappSetting;
 use App\Services\WhatsappClient;
+use App\Services\WhatsappSendPolicy;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -44,6 +45,20 @@ class SendUnpaidPaymentReminders extends Command
 
         if (!WhatsappSetting::isConnected() || !WhatsappSetting::isAutoSendEnabled()) {
             $this->warn('Envio automático do WhatsApp está desabilitado ou desconectado. Pulando.');
+            return 0;
+        }
+
+        // 🛡️ Mensagem automática de madrugada é o que mais gera denúncia.
+        // Não marca nada: se o PIX ainda estiver na janela quando o horário
+        // liberar, o lembrete sai normalmente.
+        if (WhatsappSendPolicy::isQuietTime()) {
+            $this->info('Horário de silêncio (' . WhatsappSendPolicy::quietLabel() . '). Nenhum lembrete enviado.');
+            return 0;
+        }
+
+        // 🛡️ Teto diário de lembretes (automático + manual somados).
+        if (WhatsappSendPolicy::remainingToday() === 0) {
+            $this->info('Limite diário de lembretes atingido (' . WhatsappSendPolicy::dailyCap() . ').');
             return 0;
         }
 
@@ -130,9 +145,21 @@ class SendUnpaidPaymentReminders extends Command
                 continue;
             }
 
+            // 🛡️ Teto diário: o que sobrar fica para o próximo ciclo (sem marcar).
+            if (WhatsappSendPolicy::remainingToday() === 0) {
+                $this->info('Limite diário de lembretes atingido durante o lote.');
+                break;
+            }
+
+            // 🛡️ Ritmo humano: pausa aleatória entre um envio e outro.
+            if ($sent + $failed > 0) {
+                WhatsappSendPolicy::pauseBetweenSends(3, 8);
+            }
+
             // Um único lembrete objetivo. Nunca enviamos o código PIX porque,
             // neste momento, ele pode estar vencido e gerar mais frustração.
             $ok = $this->sendReminderMessage($user, $payment);
+            WhatsappSendPolicy::recordReminder();
 
             // 🛡️ SEMPRE marca como enviado, mesmo se falhar — evita reenvio infinito
             // pro mesmo número (ex: número inválido tentando a cada 5 min).
@@ -172,11 +199,7 @@ class SendUnpaidPaymentReminders extends Command
             $greeting = $name ? "Oi {$name}!" : 'Oi!';
 
             $portalUrl = rtrim(config('app.url'), '/') . '/';
-            $message = "{$greeting}\n\n"
-                . "Você autorizou receber atualizações deste pagamento. O PIX de *R\$ {$amount}* ainda não foi confirmado.\n\n"
-                . "Se ainda quiser conectar à internet, abra o portal e gere um novo PIX:\n{$portalUrl}\n\n"
-                . "Se você já pagou, ignore esta mensagem — a confirmação é automática.\n\n"
-                . "_Para parar estas mensagens, responda *PARAR*._";
+            $message = self::reminderText($payment, $greeting, $amount, $portalUrl);
 
             $whatsappMessage = WhatsappMessage::create([
                 'user_id' => $user->id,
@@ -207,6 +230,43 @@ class SendUnpaidPaymentReminders extends Command
             ]);
             return false;
         }
+    }
+
+    /**
+     * 🛡️ Texto idêntico para muitos números é sinal de disparo em massa.
+     * Alterna 4 versões com o mesmo conteúdo: autorização, valor, como
+     * pagar, "se já pagou, ignore", convite para responder e PARAR.
+     */
+    public static function reminderText(Payment $payment, string $greeting, string $amount, string $portalUrl): string
+    {
+        $variants = [
+            "{$greeting}\n\n"
+                . "Você autorizou receber atualizações deste pagamento. O PIX de *R\$ {$amount}* ainda não foi confirmado.\n\n"
+                . "Se ainda quiser conectar à internet, abra o portal e gere um novo PIX:\n{$portalUrl}\n\n"
+                . "Se você já pagou, ignore esta mensagem — a confirmação é automática.\n\n"
+                . "Teve algum problema? Responda aqui.\n\n"
+                . "_Para parar estas mensagens, responda *PARAR*._",
+            "{$greeting} Aqui é o WiFi do ônibus da Tocantins Transporte.\n\n"
+                . "Seu PIX de *R\$ {$amount}* não foi concluído, então a internet ainda não foi liberada.\n\n"
+                . "Para conectar, é só abrir o portal no WiFi do ônibus e gerar um PIX novo:\n{$portalUrl}\n\n"
+                . "Já pagou? Pode ignorar, a liberação é automática.\n\n"
+                . "Se algo deu errado, me responda que eu ajudo.\n\n"
+                . "_Não quer mais receber? Responda *PARAR*._",
+            "{$greeting}\n\n"
+                . "Vimos que o pagamento de *R\$ {$amount}* do WiFi não chegou a ser confirmado. Como você pediu aviso, estamos lembrando.\n\n"
+                . "Ainda dá tempo: abra {$portalUrl} conectado ao WiFi do ônibus e gere um novo PIX.\n\n"
+                . "Se já pagou, desconsidere.\n\n"
+                . "Dúvida ou problema? Responda esta mensagem.\n\n"
+                . "_Para não receber mais, responda *PARAR*._",
+            "{$greeting}\n\n"
+                . "Seu acesso ao WiFi do ônibus ficou pendente: o PIX de *R\$ {$amount}* não foi pago.\n\n"
+                . "Quer navegar? Abra o portal no WiFi do ônibus e gere outro PIX:\n{$portalUrl}\n\n"
+                . "Caso já tenha pago, é só ignorar.\n\n"
+                . "Precisa de ajuda? Responda aqui.\n\n"
+                . "_Responda *PARAR* para não receber mais._",
+        ];
+
+        return $variants[$payment->id % count($variants)];
     }
 
     /**

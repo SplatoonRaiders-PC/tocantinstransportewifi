@@ -9,6 +9,7 @@ use App\Models\WhatsappSetting;
 use App\Models\Payment;
 use App\Models\User;
 use App\Services\WhatsappClient;
+use App\Services\WhatsappSendPolicy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -119,6 +120,10 @@ class WhatsappController extends Controller
             'auto_send_enabled' => WhatsappSetting::isAutoSendEnabled(),
             'pending_minutes' => WhatsappSetting::getPendingMinutes(),
             'message_template' => WhatsappSetting::getMessageTemplate(),
+            'quiet_start_hour' => WhatsappSendPolicy::quietStartHour(),
+            'quiet_end_hour' => WhatsappSendPolicy::quietEndHour(),
+            'daily_reminder_cap' => WhatsappSendPolicy::dailyCap(),
+            'reminders_today' => WhatsappSendPolicy::remindersSentToday(),
         ];
 
         return view('admin.whatsapp.settings', compact('settings'));
@@ -133,8 +138,14 @@ class WhatsappController extends Controller
             'pending_minutes' => 'required|integer|min:15|max:1440',
             'message_template' => 'required|string|max:1000',
             'auto_send_enabled' => 'nullable|boolean',
+            'quiet_start_hour' => 'required|integer|min:0|max:23',
+            'quiet_end_hour' => 'required|integer|min:0|max:23',
+            'daily_reminder_cap' => 'required|integer|min:1|max:200',
         ]);
 
+        WhatsappSetting::set('quiet_start_hour', (int) $request->quiet_start_hour);
+        WhatsappSetting::set('quiet_end_hour', (int) $request->quiet_end_hour);
+        WhatsappSetting::set('daily_reminder_cap', (int) $request->daily_reminder_cap);
         WhatsappSetting::set('pending_minutes', $request->pending_minutes);
         WhatsappSetting::set('message_template', $request->message_template);
         WhatsappSetting::set('auto_send_enabled', $request->has('auto_send_enabled') ? 'true' : 'false');
@@ -461,11 +472,21 @@ HTML;
             return response()->json(['error' => 'WhatsApp não está conectado'], 400);
         }
 
-        // O lote é deliberadamente pequeno. Não há tentativa de disfarçar
-        // automação: a proteção é consentimento, uma mensagem útil e API oficial.
+        // 🛡️ Mesmas proteções do envio automático: nada de madrugada e teto diário.
+        if (WhatsappSendPolicy::isQuietTime()) {
+            return response()->json(['error' => 'Fora do horário de envio. Lembretes não são enviados das '
+                . WhatsappSendPolicy::quietLabel() . ' para evitar denúncias.'], 422);
+        }
+        if (WhatsappSendPolicy::remainingToday() === 0) {
+            return response()->json(['error' => 'Limite diário de lembretes atingido ('
+                . WhatsappSendPolicy::dailyCap() . '). Tente amanhã.'], 422);
+        }
+
+        // O lote é deliberadamente pequeno: consentimento, uma mensagem útil e
+        // teto diário são a proteção principal.
         @set_time_limit(0);
         @ignore_user_abort(true);
-        $maxPerRun = 10;
+        $maxPerRun = min(10, WhatsappSendPolicy::remainingToday());
 
         $pendingMinutes = max(15, WhatsappSetting::getPendingMinutes());
         $messageTemplate = WhatsappSetting::getMessageTemplate();
@@ -496,11 +517,12 @@ HTML;
         $skipped = 0;
         $batchCount = 0;
 
-        $optOutFooter = "\n\n_Não quer mais receber? Responda *PARAR*._";
+        $optOutFooter = "\n\nTeve algum problema? Responda aqui.\n\n_Não quer mais receber? Responda *PARAR*._";
 
         foreach ($pendingPayments as $payment) {
-            // Teto por execução para limitar o contato iniciado pela empresa.
-            if ($sent >= $maxPerRun) {
+            // Teto por execução (tentativas, inclusive falhas) para limitar o
+            // contato iniciado pela empresa e respeitar o limite diário.
+            if ($batchCount >= $maxPerRun) {
                 break;
             }
 
@@ -548,6 +570,13 @@ HTML;
                 'status' => 'pending',
             ]);
 
+            // 🛡️ Ritmo humano: pausa aleatória entre envios (não fixa).
+            if ($batchCount > 0) {
+                WhatsappSendPolicy::pauseBetweenSends(2, 5);
+            }
+            $batchCount++;
+            WhatsappSendPolicy::recordReminder();
+
             try {
                 $response = WhatsappClient::send($phone, $message, [], 30);
 
@@ -558,15 +587,6 @@ HTML;
                 } else {
                     $whatsappMessage->markAsFailed($response->body());
                     $failed++;
-                }
-
-                $batchCount++;
-
-                // Espaçamento técnico curto para não sobrecarregar a conexão.
-                // Conformidade vem de consentimento e da API oficial, não de
-                // tentar simular um envio humano.
-                if ($batchCount < $maxPerRun) {
-                    usleep(500000);
                 }
             } catch (\Exception $e) {
                 $whatsappMessage->markAsFailed($e->getMessage());

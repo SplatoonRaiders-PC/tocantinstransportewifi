@@ -65,6 +65,51 @@
             </div>
         </div>
 
+        <!-- Proteção contra bloqueio -->
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden mb-6">
+            <div class="p-6">
+                <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2 mb-1">
+                    <span class="text-2xl">🛡️</span>
+                    Proteção contra bloqueio
+                </h2>
+                <p class="text-xs text-gray-500 mb-5">
+                    Vale para o envio automático e para o botão "Enviar para pendentes". Hoje já foram enviados
+                    <strong>{{ $settings['reminders_today'] }}</strong> de <strong>{{ $settings['daily_reminder_cap'] }}</strong> lembretes.
+                </p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Não enviar a partir de</label>
+                        <select name="quiet_start_hour" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-tocantins-green focus:border-transparent">
+                            @for ($h = 0; $h < 24; $h++)
+                                <option value="{{ $h }}" @selected((int) old('quiet_start_hour', $settings['quiet_start_hour']) === $h)>{{ sprintf('%02d:00', $h) }}</option>
+                            @endfor
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Voltar a enviar às</label>
+                        <select name="quiet_end_hour" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-tocantins-green focus:border-transparent">
+                            @for ($h = 0; $h < 24; $h++)
+                                <option value="{{ $h }}" @selected((int) old('quiet_end_hour', $settings['quiet_end_hour']) === $h)>{{ sprintf('%02d:00', $h) }}</option>
+                            @endfor
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Máximo de lembretes por dia</label>
+                        <input type="number" name="daily_reminder_cap" value="{{ old('daily_reminder_cap', $settings['daily_reminder_cap']) }}" min="1" max="200" required
+                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-tocantins-green focus:border-transparent">
+                        @error('daily_reminder_cap')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-3">
+                    Recomendado: silêncio das 22:00 às 07:00 e até 30 lembretes por dia. Mensagem automática de madrugada é o que mais gera denúncia.
+                    Os lembretes também alternam entre 4 textos e esperam alguns segundos (aleatórios) entre um envio e outro.
+                </p>
+            </div>
+        </div>
+
         <!-- Template da Mensagem -->
         <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden mb-6">
             <div class="p-6">

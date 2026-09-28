@@ -1162,10 +1162,12 @@
                         <input type="tel" id="user_phone" name="phone" required placeholder="(63) 9 8101-3050" maxlength="16" autofocus
                             class="w-full border border-gray-300 rounded-xl px-4 py-3.5 focus:outline-none focus:border-green focus:ring-2 focus:ring-green/20 transition-all text-base text-center font-medium">
                     </div>
-                    <label class="flex items-start gap-2.5 rounded-xl bg-emerald-50 border border-emerald-100 p-3 cursor-pointer">
-                        <input type="checkbox" id="whatsapp-payment-opt-in" name="whatsapp_payment_opt_in" value="1" class="mt-0.5 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
-                        <span class="text-xs leading-snug text-emerald-900">
-                            Quero receber no WhatsApp da <strong>Tocantins Transporte</strong> somente atualizações deste pagamento: um lembrete se eu não concluir e a confirmação quando eu pagar. Posso parar respondendo <strong>PARAR</strong>.
+                    <!-- Autorização do WhatsApp: desmarcada (consentimento precisa ser uma escolha do passageiro) -->
+                    <label class="flex items-start gap-3 rounded-xl bg-emerald-50 border-2 border-emerald-200 p-3 cursor-pointer has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-100/60 transition-colors">
+                        <input type="checkbox" id="whatsapp-payment-opt-in" name="whatsapp_payment_opt_in" value="1" class="mt-0.5 h-5 w-5 flex-shrink-0 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
+                        <span class="leading-snug">
+                            <span class="block text-[14px] font-bold text-emerald-900">📲 Receber o comprovante e o aviso de liberação no WhatsApp</span>
+                            <span class="block text-[12px] text-emerald-800 mt-1">Só sobre este pagamento: a confirmação e, se você não concluir, um único lembrete da <strong>Tocantins Transporte</strong>. Para parar, responda <strong>PARAR</strong>.</span>
                         </span>
                     </label>
                     <button type="submit" id="registration-submit-btn" class="connect-button w-full text-white font-bold py-3.5 rounded-xl shadow-md text-sm">
@@ -1189,10 +1191,11 @@
                     <p id="selected-plan-price" class="text-3xl font-extrabold text-emerald-700">R$6,99</p>
                     <p id="selected-plan-name" class="text-sm text-emerald-600 mt-1">Viagem completa / {{ $session_duration ?? 12 }} horas de acesso</p>
                 </div>
-                <label class="flex items-start gap-2.5 rounded-xl bg-emerald-50 border border-emerald-100 p-3 mb-4 cursor-pointer">
-                    <input type="checkbox" id="whatsapp-payment-opt-in-payment" value="1" class="mt-0.5 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
-                    <span class="text-xs leading-snug text-emerald-900">
-                        Quero receber no WhatsApp a confirmação deste PIX e, se necessário, um único lembrete para concluir o pagamento. Posso responder <strong>PARAR</strong> quando quiser.
+                <label class="flex items-start gap-3 rounded-xl bg-emerald-50 border-2 border-emerald-200 p-3 mb-4 cursor-pointer has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-100/60 transition-colors">
+                    <input type="checkbox" id="whatsapp-payment-opt-in-payment" value="1" class="mt-0.5 h-5 w-5 flex-shrink-0 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
+                    <span class="leading-snug">
+                        <span class="block text-[14px] font-bold text-emerald-900">📲 Receber o comprovante e o aviso de liberação no WhatsApp</span>
+                        <span class="block text-[12px] text-emerald-800 mt-1">Só sobre este pagamento: a confirmação e, se você não concluir, um único lembrete. Para parar, responda <strong>PARAR</strong>.</span>
                     </span>
                 </label>
                 <button data-payment="pix" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition-colors shadow-md text-sm">
