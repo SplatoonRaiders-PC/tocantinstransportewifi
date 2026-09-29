@@ -155,20 +155,19 @@
             </div>
             <span class="text-[11px] text-muted">{{ $revenueByBus->where('total', '>', 0)->count() }} de {{ $revenueByBus->count() }} com receita</span>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-6 px-4 py-1">
+        <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-2.5 p-3">
             @php $maxRevenue = $revenueByBus->max('total') ?: 1; @endphp
             @foreach($revenueByBus as $bus)
-            @php $share = ($bus->total / max($maxRevenue, 0.01)) * 100; @endphp
-            <div class="py-2.5 border-b border-black/[0.05]" title="{{ $bus->bus_id }}">
-                <div class="flex items-baseline justify-between gap-3">
-                    <p class="text-[13px] font-semibold text-ink truncate">{{ $bus->bus_name }}</p>
-                    <p class="text-[13px] font-extrabold tracking-tight whitespace-nowrap {{ $bus->total > 0 ? 'text-emerald-700' : 'text-gray-400' }}">R$ {{ number_format($bus->total, 2, ',', '.') }}</p>
+            @php $share = ($bus->total / max($maxRevenue, 0.01)) * 100; $hasRevenue = $bus->total > 0; @endphp
+            <div class="rounded-xl p-3 ring-1 transition-shadow hover:shadow-md {{ $hasRevenue ? 'ring-black/[0.06] bg-white' : 'ring-black/[0.04] bg-gray-50/70' }}" title="{{ $bus->bus_id }}">
+                <p class="text-xs font-semibold text-ink2 truncate">{{ $bus->bus_name }}</p>
+                <p class="mt-1 text-base font-extrabold tracking-tight leading-tight {{ $hasRevenue ? 'text-emerald-700' : 'text-gray-400' }}">R$ {{ number_format($bus->total, 2, ',', '.') }}</p>
+                <div class="mt-2 h-1 bg-gray-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-emerald-500 rounded-full" style="width: {{ max(0, $share) }}%"></div>
                 </div>
-                <div class="mt-1.5 flex items-center gap-2">
-                    <div class="h-1.5 flex-1 bg-gray-100 rounded-full overflow-hidden">
-                        <div class="h-full bg-emerald-500 rounded-full" style="width: {{ max(0, $share) }}%"></div>
-                    </div>
-                    <span class="text-[10px] text-muted whitespace-nowrap">{{ $bus->count }} pgto{{ $bus->count === 1 ? '' : 's' }}</span>
+                <div class="mt-1.5 flex items-center justify-between text-[10px] text-muted">
+                    <span>{{ $bus->count }} pgto{{ $bus->count === 1 ? '' : 's' }}</span>
+                    <span class="font-semibold">{{ number_format($share, 0) }}%</span>
                 </div>
                 @if(($bus->refunded_count ?? 0) > 0)
                 <p class="text-[10px] text-red-600 mt-0.5">{{ $bus->refunded_count }} estorno(s) − R$ {{ number_format($bus->refunded_total ?? 0, 2, ',', '.') }}</p>

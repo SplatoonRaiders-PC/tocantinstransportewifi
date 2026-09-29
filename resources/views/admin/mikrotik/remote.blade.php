@@ -10,12 +10,12 @@
 @section('page-title', 'MikroTik Remoto')
 
 @section('content')
-<div class="max-w-8xl mx-auto">
+<div class="admin-page ui-modern">
 
     <!-- Hero Banner -->
-    <div class="bg-gradient-to-r from-green-dark via-green to-green-light rounded-xl px-5 py-4 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+    <div class="page-hero px-5 py-4 mb-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-            <p class="text-[10px] font-bold uppercase tracking-widest text-white/60 mb-0.5">Starlink · Controle de Acesso</p>
+            <p class="text-[10px] font-bold uppercase tracking-widest text-emerald-200/80 mb-0.5">Starlink · Controle de Acesso</p>
             <h1 class="text-xl font-bold text-white">MikroTik Remoto</h1>
             <p class="text-xs text-white/70 mt-0.5">Gerencie os MACs liberados. Sincronização a cada 15s via API.</p>
         </div>

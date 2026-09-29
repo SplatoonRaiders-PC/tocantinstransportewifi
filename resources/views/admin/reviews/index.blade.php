@@ -10,7 +10,7 @@
 @section('page-title', 'Lista de Avaliacoes')
 
 @section('content')
-<div class="space-y-6">
+<div class="admin-page ui-modern space-y-5">
     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-2">
         <div class="flex flex-wrap gap-2">
             <a href="{{ route('admin.reviews.index') }}" class="px-4 py-2 rounded-xl text-sm font-medium {{ request()->routeIs('admin.reviews.index') ? 'bg-emerald-600 text-white shadow' : 'text-gray-600 hover:bg-gray-100' }}">Lista</a>
@@ -31,7 +31,7 @@
     </div>
 
     @if(session('success'))
-    <div class="bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded-2xl">
+    <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold px-4 py-3 rounded-2xl">
         {{ session('success') }}
     </div>
     @endif

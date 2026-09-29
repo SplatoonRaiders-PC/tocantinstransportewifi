@@ -1,15 +1,17 @@
 @extends('layouts.admin')
 
 @section('title', 'Usuarios')
+@section('page-title', 'Usuários')
 
 @section('content')
-<div class="max-w-8xl mx-auto px-4 py-6">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3">
+<div class="admin-page ui-modern">
+    <div class="page-hero px-5 py-4 mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">Usuarios</h1>
-            <p class="text-sm text-gray-500 mt-1">Gerencie contas, status e acessos</p>
+            <p class="text-[10px] font-bold uppercase tracking-widest text-emerald-200/80 mb-0.5">Gestão · Contas</p>
+            <h1 class="text-xl font-bold text-white">Usuários</h1>
+            <p class="text-xs text-white/70 mt-0.5">Gerencie contas, status e acessos</p>
         </div>
-        <a href="{{ route('admin.users.create') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition">
+        <a href="{{ route('admin.users.create') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-white text-green-dark rounded-xl text-sm font-bold hover:bg-emerald-50 transition shadow-sm">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             Novo Usuario
         </a>
@@ -34,7 +36,7 @@
     @endif
 
     {{-- Cards de estatísticas --}}
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-5">
         <div class="bg-white rounded-xl border border-gray-200 p-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -91,7 +93,7 @@
             'named'   => ['label' => 'Usuarios com nome', 'icon' => 'M15.232 5.232a3 3 0 114.243 4.243L8.5 20.45 3 22l1.55-5.5L15.232 5.232zM13.5 6.964l3.536 3.536', 'color' => 'green'],
         ];
         $colorMap = [
-            'blue'   => ['active' => 'bg-blue-600 text-white shadow-sm',    'inactive' => 'text-gray-600 hover:bg-gray-100', 'badge' => 'bg-blue-100 text-blue-700'],
+            'blue'   => ['active' => 'bg-emerald-600 text-white shadow-sm',    'inactive' => 'text-gray-600 hover:bg-gray-100', 'badge' => 'bg-blue-100 text-blue-700'],
             'gray'   => ['active' => 'bg-gray-700 text-white shadow-sm',    'inactive' => 'text-gray-600 hover:bg-gray-100', 'badge' => 'bg-gray-200 text-gray-700'],
             'purple' => ['active' => 'bg-purple-600 text-white shadow-sm',  'inactive' => 'text-gray-600 hover:bg-gray-100', 'badge' => 'bg-purple-100 text-purple-700'],
             'red'    => ['active' => 'bg-red-600 text-white shadow-sm',     'inactive' => 'text-gray-600 hover:bg-gray-100', 'badge' => 'bg-red-100 text-red-700'],
@@ -130,9 +132,9 @@
                     <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     <input type="text" name="search" value="{{ request('search') }}"
                            placeholder="Buscar por nome, email ou telefone..."
-                           class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                           class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
                 </div>
-                <select name="status" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <select name="status" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
                     <option value="">Todos os Status</option>
                     <option value="connected" {{ request('status') === 'connected' ? 'selected' : '' }}>Conectados</option>
                     <option value="offline" {{ request('status') === 'offline' ? 'selected' : '' }}>Offline</option>
@@ -141,7 +143,7 @@
                 </select>
             </div>
             <div class="flex gap-2">
-                <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition">
+                <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     Buscar
                 </button>

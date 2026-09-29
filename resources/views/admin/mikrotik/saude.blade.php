@@ -10,12 +10,12 @@
 @section('page-title', 'Saúde dos MikroTiks')
 
 @section('content')
-<div class="max-w-8xl mx-auto">
+<div class="admin-page ui-modern">
 
     {{-- Hero --}}
-    <div class="bg-gradient-to-r from-green-dark via-green to-green-light rounded-xl px-5 py-4 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+    <div class="page-hero px-5 py-4 mb-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-            <p class="text-[10px] font-bold uppercase tracking-widest text-white/60 mb-0.5">Starlink · Monitoramento</p>
+            <p class="text-[10px] font-bold uppercase tracking-widest text-emerald-200/80 mb-0.5">Starlink · Monitoramento</p>
             <h1 class="text-xl font-bold text-white">Saúde dos {{ $summary['total'] }} MikroTiks</h1>
             <p class="text-xs text-white/70 mt-0.5">
                 Cada ônibus sincroniza a cada 15s. Histórico de uptime dos últimos {{ $days }} dias.

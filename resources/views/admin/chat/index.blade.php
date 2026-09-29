@@ -9,43 +9,43 @@
 @endsection
 
 @section('content')
-<div class="space-y-6">
+<div class="admin-page ui-modern space-y-5">
     <!-- Stats Cards -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white rounded-2xl p-5 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="bg-white rounded-2xl p-4 border border-gray-100 hover:shadow-xl transition-shadow">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm text-gray-500 font-medium">Total de Conversas</p>
-                    <p class="text-3xl font-bold text-gray-800 mt-1">{{ $stats['total'] }}</p>
+                    <p class="text-2xl font-extrabold tracking-tight text-gray-800 mt-1">{{ $stats['total'] }}</p>
                 </div>
-                <div class="w-14 h-14 bg-gradient-to-br from-blue-100 to-blue-50 rounded-2xl flex items-center justify-center">
-                    <svg class="w-7 h-7 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-50 rounded-2xl flex items-center justify-center">
+                    <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
                     </svg>
                 </div>
             </div>
         </div>
-        <div class="bg-white rounded-2xl p-5 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
+        <div class="bg-white rounded-2xl p-4 border border-gray-100 hover:shadow-xl transition-shadow">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm text-gray-500 font-medium">Conversas Ativas</p>
-                    <p class="text-3xl font-bold text-emerald-600 mt-1">{{ $stats['active'] }}</p>
+                    <p class="text-2xl font-extrabold tracking-tight text-emerald-600 mt-1">{{ $stats['active'] }}</p>
                 </div>
-                <div class="w-14 h-14 bg-gradient-to-br from-emerald-100 to-emerald-50 rounded-2xl flex items-center justify-center">
-                    <svg class="w-7 h-7 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="w-10 h-10 bg-gradient-to-br from-emerald-100 to-emerald-50 rounded-2xl flex items-center justify-center">
+                    <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                 </div>
             </div>
         </div>
-        <div class="bg-white rounded-2xl p-5 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
+        <div class="bg-white rounded-2xl p-4 border border-gray-100 hover:shadow-xl transition-shadow">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm text-gray-500 font-medium">Aguardando Resposta</p>
-                    <p class="text-3xl font-bold text-amber-600 mt-1">{{ $stats['pending'] }}</p>
+                    <p class="text-2xl font-extrabold tracking-tight text-amber-600 mt-1">{{ $stats['pending'] }}</p>
                 </div>
-                <div class="w-14 h-14 bg-gradient-to-br from-amber-100 to-amber-50 rounded-2xl flex items-center justify-center">
-                    <svg class="w-7 h-7 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="w-10 h-10 bg-gradient-to-br from-amber-100 to-amber-50 rounded-2xl flex items-center justify-center">
+                    <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                 </div>
@@ -55,10 +55,10 @@
             <div class="flex items-center justify-between relative z-10">
                 <div>
                     <p class="text-sm text-gray-500 font-medium">Não Lidas</p>
-                    <p class="text-3xl font-bold text-red-600 mt-1">{{ $stats['unread'] }}</p>
+                    <p class="text-2xl font-extrabold tracking-tight text-red-600 mt-1">{{ $stats['unread'] }}</p>
                 </div>
-                <div class="w-14 h-14 bg-gradient-to-br from-red-100 to-red-50 rounded-2xl flex items-center justify-center">
-                    <svg class="w-7 h-7 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="w-10 h-10 bg-gradient-to-br from-red-100 to-red-50 rounded-2xl flex items-center justify-center">
+                    <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                     </svg>
                 </div>

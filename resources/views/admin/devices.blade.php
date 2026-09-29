@@ -1,22 +1,24 @@
 @extends('layouts.admin')
 
 @section('title', 'Dispositivos & Pagamentos')
+@section('page-title', 'Dispositivos & Pagamentos')
 
 @section('content')
-<div class="max-w-8xl mx-auto px-4 py-6">
+<div class="admin-page ui-modern">
 
     <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3">
+    <div class="page-hero px-5 py-4 mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">Dispositivos & Pagamentos</h1>
-            <p class="text-sm text-gray-500 mt-1">Monitore usuários que pagaram e dispositivos detectados na rede</p>
+            <p class="text-[10px] font-bold uppercase tracking-widest text-emerald-200/80 mb-0.5">Gestão · Rede</p>
+            <h1 class="text-xl font-bold text-white">Dispositivos & Pagamentos</h1>
+            <p class="text-xs text-white/70 mt-0.5">Monitore usuários que pagaram e dispositivos detectados na rede</p>
         </div>
         <div class="flex gap-2">
-            <a href="{{ route('admin.mikrotik.remote.index') }}" class="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm font-medium text-blue-700 hover:bg-blue-100 transition">
+            <a href="{{ route('admin.mikrotik.remote.index') }}" class="inline-flex items-center gap-1.5 px-3 py-2 bg-white/15 border border-white/20 rounded-xl text-sm font-semibold text-white hover:bg-white/25 transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/></svg>
                 Painel MikroTik
             </a>
-            <button onclick="location.reload()" class="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition">
+            <button onclick="location.reload()" class="inline-flex items-center gap-1.5 px-3 py-2 bg-white rounded-xl text-sm font-bold text-green-dark hover:bg-emerald-50 transition shadow-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                 Atualizar
             </button>
@@ -102,17 +104,17 @@
     <div class="bg-white rounded-xl border shadow-sm mb-6 p-4">
         <form method="GET" action="{{ route('admin.devices') }}" class="flex flex-col sm:flex-row gap-3">
             <div class="flex-1">
-                <input type="text" name="search" value="{{ $search }}" placeholder="Buscar por MAC, telefone ou nome..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <input type="text" name="search" value="{{ $search }}" placeholder="Buscar por MAC, telefone ou nome..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
             </div>
             <div>
-                <select name="status" class="w-full sm:w-auto border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <select name="status" class="w-full sm:w-auto border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
                     <option value="">Todos os Status</option>
                     <option value="online" {{ $statusFilter === 'online' ? 'selected' : '' }}>Online / Ativos</option>
                     <option value="expired" {{ $statusFilter === 'expired' ? 'selected' : '' }}>Expirados</option>
                 </select>
             </div>
             <div class="flex gap-2">
-                <button type="submit" class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition">
+                <button type="submit" class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     Buscar
                 </button>
