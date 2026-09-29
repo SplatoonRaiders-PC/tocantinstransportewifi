@@ -266,59 +266,13 @@ class ReportsController extends Controller
     }
 
     /**
-     * Receita líquida agrupada por ônibus (pagos − estornos)
+     * Receita líquida agrupada por ônibus (pagos − estornos), incluindo ônibus sem receita
      */
     private function getRevenueByBus($startDateTime, $endDateTime)
     {
-        $dateRange = [$startDateTime, $endDateTime];
-        $busNames = \App\Models\Bus::getSerialNameMap();
-        $busIdExpression = "COALESCE(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(payments.payment_data, '$.transferred_mikrotik_id')), ''), users.last_mikrotik_id, 'desconhecido')";
-
-        $completed = Payment::where('payments.status', 'completed')
-            ->whereBetween('payments.created_at', $dateRange)
-            ->join('users', 'payments.user_id', '=', 'users.id')
-            ->select(
-                DB::raw("$busIdExpression as bus_id"),
-                DB::raw('SUM(payments.amount) as total'),
-                DB::raw('COUNT(payments.id) as count')
-            )
-            ->groupBy('bus_id')
-            ->get()
-            ->keyBy('bus_id');
-
-        $refunded = Payment::where('payments.status', 'refunded')
-            ->whereBetween('payments.created_at', $dateRange)
-            ->join('users', 'payments.user_id', '=', 'users.id')
-            ->select(
-                DB::raw("$busIdExpression as bus_id"),
-                DB::raw('SUM(payments.amount) as total'),
-                DB::raw('COUNT(payments.id) as count')
-            )
-            ->groupBy('bus_id')
-            ->get()
-            ->keyBy('bus_id');
-
-        $busIds = $completed->keys()->merge($refunded->keys())->unique();
-
-        return $busIds->map(function ($busId) use ($completed, $refunded, $busNames) {
-            $paid = (float) ($completed[$busId]->total ?? 0);
-            $refund = (float) ($refunded[$busId]->total ?? 0);
-            $paidCount = (int) ($completed[$busId]->count ?? 0);
-            $refundCount = (int) ($refunded[$busId]->count ?? 0);
-
-            return (object) [
-                'bus_id' => $busId,
-                'bus_name' => $busNames[$busId] ?? $busId,
-                'total' => $paid - $refund,
-                'count' => $paidCount,
-                'refunded_count' => $refundCount,
-                'refunded_total' => $refund,
-            ];
-        })->filter(fn ($row) => $row->count > 0 || $row->refunded_count > 0)
-            ->sortByDesc('total')
-            ->values();
+        return app(\App\Services\BusRevenueService::class)->byBus($startDateTime, $endDateTime);
     }
-    
+
     public function export(Request $request)
     {
         // Mesma normalização do index

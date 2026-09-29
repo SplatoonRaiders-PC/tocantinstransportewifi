@@ -27,12 +27,19 @@ class AdminController extends Controller
         $system_status = $this->getSystemStatus();
         $buses = \App\Models\Bus::orderByDesc('last_sync_at')->get();
 
+        // Receita por ônibus (todos os cadastrados, inclusive sem receita)
+        $busRevenue = app(\App\Services\BusRevenueService::class);
+        $bus_revenue_today = $busRevenue->byBus(now()->startOfDay(), now()->endOfDay())->keyBy('bus_id');
+        $bus_revenue_week = $busRevenue->byBus(now()->subDays(7), now())->keyBy('bus_id');
+
         return view('admin.dashboard', compact(
             'stats',
             'revenue_chart',
             'connections_chart',
             'system_status',
-            'buses'
+            'buses',
+            'bus_revenue_today',
+            'bus_revenue_week'
         ));
     }
 

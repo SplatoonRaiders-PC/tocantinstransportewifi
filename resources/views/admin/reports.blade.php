@@ -187,7 +187,7 @@
                 @php $share = ($bus->total / max($maxRevenue, 0.01)) * 100; @endphp
                 <div class="rounded-2xl p-4 ring-1 ring-black/[0.06] bg-gradient-to-br from-gray-50 to-white hover:shadow-md transition-all">
                     <div class="flex items-center gap-3 mb-3">
-                        <div class="w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-700 rounded-xl flex items-center justify-center flex-shrink-0 text-white shadow-md shadow-emerald-600/25">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 {{ $bus->total > 0 ? 'bg-gradient-to-br from-emerald-500 to-green-700 text-white shadow-md shadow-emerald-600/25' : 'bg-gray-100 text-gray-400' }}">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h8m-8 4h8m-4 4v4m-4-4h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                         </div>
                         <div class="min-w-0">
@@ -195,7 +195,7 @@
                             <p class="text-[11px] text-muted font-mono truncate">{{ $bus->bus_id }}</p>
                         </div>
                     </div>
-                    <p class="text-xl font-extrabold text-emerald-700 tracking-tight">R$ {{ number_format($bus->total, 2, ',', '.') }}</p>
+                    <p class="text-xl font-extrabold tracking-tight {{ $bus->total > 0 ? 'text-emerald-700' : 'text-gray-400' }}">R$ {{ number_format($bus->total, 2, ',', '.') }}</p>
                     <div class="flex items-center justify-between mt-1.5">
                         <span class="text-xs text-muted">{{ $bus->count }} pagamentos</span>
                         <span class="text-xs font-bold text-ink2">{{ number_format($share, 0) }}%</span>
