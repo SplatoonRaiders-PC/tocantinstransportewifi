@@ -172,7 +172,7 @@ class ReportsController extends Controller
         }
         
         return $query->orderBy('created_at', 'desc')
-            ->paginate(10)
+            ->paginate(20)
             ->withQueryString();
     }
     

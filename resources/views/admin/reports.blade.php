@@ -104,132 +104,98 @@
     </section>
 
     <!-- Cards de Estatísticas -->
-    <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+    <section class="rep-card rounded-2xl grid grid-cols-2 lg:grid-cols-5 divide-black/[0.06] lg:divide-x overflow-hidden">
 
         <!-- Líquido (destaque) -->
-        <div class="rep-hero rounded-2xl p-5 text-white sm:col-span-2 xl:col-span-1 relative overflow-hidden">
-            <div class="pointer-events-none absolute -top-10 -right-10 w-32 h-32 rounded-full bg-emerald-300/20 blur-2xl"></div>
-            <div class="relative flex items-center justify-between">
-                <p class="text-sm font-semibold text-white/70">Receita líquida</p>
-                <span class="w-10 h-10 bg-white/15 rounded-xl flex items-center justify-center">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                </span>
-            </div>
-            <p class="relative mt-3 text-3xl font-extrabold tracking-tight">R$ {{ number_format($stats['total_revenue'], 2, ',', '.') }}</p>
-            <p class="relative mt-2 text-xs text-white/70">Ticket médio: <span class="font-bold text-white">R$ {{ number_format($stats['avg_payment'], 2, ',', '.') }}</span></p>
+        <div class="col-span-2 lg:col-span-1 px-4 py-3 bg-emerald-50/60 border-b lg:border-b-0 border-black/[0.06]">
+            <p class="text-[11px] font-semibold text-emerald-700 uppercase tracking-wide">Receita líquida</p>
+            <p class="mt-0.5 text-xl font-extrabold text-emerald-700 tracking-tight leading-tight">R$ {{ number_format($stats['total_revenue'], 2, ',', '.') }}</p>
+            <p class="text-[11px] text-muted">Ticket médio R$ {{ number_format($stats['avg_payment'], 2, ',', '.') }}</p>
             @if(($stats['refunded_revenue'] ?? 0) > 0)
-            <p class="relative mt-1 text-[11px] text-red-200">Bruto R$ {{ number_format($stats['completed_revenue'] ?? 0, 2, ',', '.') }} − Estornos R$ {{ number_format($stats['refunded_revenue'], 2, ',', '.') }}</p>
+            <p class="text-[10px] text-red-600">Bruto R$ {{ number_format($stats['completed_revenue'] ?? 0, 2, ',', '.') }} − Estornos R$ {{ number_format($stats['refunded_revenue'], 2, ',', '.') }}</p>
             @endif
         </div>
 
-        <div class="rep-card rounded-2xl p-5">
-            <div class="flex items-center justify-between">
-                <p class="text-sm font-semibold text-muted">Pendente</p>
-                <span class="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center">
-                    <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                </span>
-            </div>
-            <p class="mt-3 text-2xl font-extrabold text-ink tracking-tight">R$ {{ number_format($stats['pending_payments'], 2, ',', '.') }}</p>
-            <p class="mt-2 text-xs text-muted">Aguardando pagamento</p>
+        <div class="px-4 py-3 border-b lg:border-b-0 border-r lg:border-r-0 border-black/[0.06]">
+            <p class="text-[11px] font-semibold text-muted uppercase tracking-wide">Pendente</p>
+            <p class="mt-0.5 text-xl font-extrabold text-ink tracking-tight leading-tight">R$ {{ number_format($stats['pending_payments'], 2, ',', '.') }}</p>
+            <p class="text-[11px] text-muted">Aguardando pagamento</p>
         </div>
 
-        <div class="rep-card rounded-2xl p-5">
-            <div class="flex items-center justify-between">
-                <p class="text-sm font-semibold text-muted">Pagamentos</p>
-                <span class="w-10 h-10 bg-sky-50 rounded-xl flex items-center justify-center">
-                    <svg class="w-5 h-5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-                </span>
-            </div>
-            <p class="mt-3 text-2xl font-extrabold text-ink tracking-tight">{{ $stats['total_payments'] }}</p>
-            <div class="flex flex-wrap gap-1.5 mt-2">
-                <span class="text-[11px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">{{ $stats['completed_payments_count'] }} pagos</span>
-                <span class="text-[11px] font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">{{ $stats['pending_payments_count'] }} pend.</span>
-                <span class="text-[11px] font-bold bg-red-50 text-red-700 px-2 py-0.5 rounded-full">{{ $stats['refunded_payments_count'] ?? 0 }} estornos</span>
-            </div>
+        <div class="px-4 py-3 border-b lg:border-b-0 border-black/[0.06]">
+            <p class="text-[11px] font-semibold text-muted uppercase tracking-wide">Pagamentos</p>
+            <p class="mt-0.5 text-xl font-extrabold text-ink tracking-tight leading-tight">{{ $stats['total_payments'] }}</p>
+            <p class="text-[11px] text-muted">
+                <span class="font-semibold text-emerald-700">{{ $stats['completed_payments_count'] }} pagos</span> ·
+                <span class="font-semibold text-amber-600">{{ $stats['pending_payments_count'] }} pend.</span> ·
+                <span class="font-semibold text-red-600">{{ $stats['refunded_payments_count'] ?? 0 }} estornos</span>
+            </p>
         </div>
 
-        <div class="rep-card rounded-2xl p-5">
-            <div class="flex items-center justify-between">
-                <p class="text-sm font-semibold text-muted">Usuários</p>
-                <span class="w-10 h-10 bg-violet-50 rounded-xl flex items-center justify-center">
-                    <svg class="w-5 h-5 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                </span>
-            </div>
-            <p class="mt-3 text-2xl font-extrabold text-ink tracking-tight">{{ $stats['total_users'] }}</p>
-            <p class="mt-2 text-xs text-muted"><span class="inline-flex items-center gap-1 font-bold text-emerald-700"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>{{ $stats['connected_users'] }}</span> conectados agora</p>
+        <div class="px-4 py-3 border-r lg:border-r-0 border-black/[0.06]">
+            <p class="text-[11px] font-semibold text-muted uppercase tracking-wide">Usuários</p>
+            <p class="mt-0.5 text-xl font-extrabold text-ink tracking-tight leading-tight">{{ $stats['total_users'] }}</p>
+            <p class="text-[11px] text-muted"><span class="inline-flex items-center gap-1 font-semibold text-emerald-700"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>{{ $stats['connected_users'] }}</span> conectados agora</p>
         </div>
 
-        <div class="rep-card rounded-2xl p-5">
-            <div class="flex items-center justify-between">
-                <p class="text-sm font-semibold text-muted">Sessões</p>
-                <span class="w-10 h-10 bg-sky-50 rounded-xl flex items-center justify-center">
-                    <svg class="w-5 h-5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/></svg>
-                </span>
-            </div>
-            <p class="mt-3 text-2xl font-extrabold text-ink tracking-tight">{{ $stats['active_sessions'] }}</p>
-            <p class="mt-2 text-xs text-muted">No período selecionado</p>
+        <div class="px-4 py-3">
+            <p class="text-[11px] font-semibold text-muted uppercase tracking-wide">Sessões</p>
+            <p class="mt-0.5 text-xl font-extrabold text-ink tracking-tight leading-tight">{{ $stats['active_sessions'] }}</p>
+            <p class="text-[11px] text-muted">No período selecionado</p>
         </div>
     </section>
 
     <!-- Receita por Ônibus -->
     @if($revenueByBus->count() > 0)
     <section class="rep-card rounded-2xl overflow-hidden">
-        <div class="flex flex-wrap items-center justify-between gap-2 px-5 py-4 border-b border-black/[0.06]">
+        <div class="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-black/[0.06]">
             <div>
-                <h3 class="text-base font-bold text-ink">Receita por ônibus</h3>
-                <p class="text-xs text-muted mt-0.5">{{ $periodLabel }}</p>
+                <h3 class="text-sm font-bold text-ink">Receita por ônibus</h3>
+                <p class="text-[11px] text-muted">{{ $periodLabel }}</p>
             </div>
+            <span class="text-[11px] text-muted">{{ $revenueByBus->where('total', '>', 0)->count() }} de {{ $revenueByBus->count() }} com receita</span>
         </div>
-        <div class="p-5">
-            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-                @php $maxRevenue = $revenueByBus->max('total') ?: 1; @endphp
-                @foreach($revenueByBus as $bus)
-                @php $share = ($bus->total / max($maxRevenue, 0.01)) * 100; @endphp
-                <div class="rounded-2xl p-4 ring-1 ring-black/[0.06] bg-gradient-to-br from-gray-50 to-white hover:shadow-md transition-all">
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 {{ $bus->total > 0 ? 'bg-gradient-to-br from-emerald-500 to-green-700 text-white shadow-md shadow-emerald-600/25' : 'bg-gray-100 text-gray-400' }}">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h8m-8 4h8m-4 4v4m-4-4h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                        </div>
-                        <div class="min-w-0">
-                            <p class="text-sm font-bold text-ink truncate">{{ $bus->bus_name }}</p>
-                            <p class="text-[11px] text-muted font-mono truncate">{{ $bus->bus_id }}</p>
-                        </div>
-                    </div>
-                    <p class="text-xl font-extrabold tracking-tight {{ $bus->total > 0 ? 'text-emerald-700' : 'text-gray-400' }}">R$ {{ number_format($bus->total, 2, ',', '.') }}</p>
-                    <div class="flex items-center justify-between mt-1.5">
-                        <span class="text-xs text-muted">{{ $bus->count }} pagamentos</span>
-                        <span class="text-xs font-bold text-ink2">{{ number_format($share, 0) }}%</span>
-                    </div>
-                    <div class="h-2 bg-gray-100 rounded-full overflow-hidden mt-2">
-                        <div class="h-full bg-gradient-to-r from-emerald-400 to-green-600 rounded-full" style="width: {{ max(0, $share) }}%"></div>
-                    </div>
-                    @if(($bus->refunded_count ?? 0) > 0)
-                    <p class="text-[11px] text-red-600 font-semibold mt-2">{{ $bus->refunded_count }} estorno(s) − R$ {{ number_format($bus->refunded_total ?? 0, 2, ',', '.') }}</p>
-                    @endif
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-6 px-4 py-1">
+            @php $maxRevenue = $revenueByBus->max('total') ?: 1; @endphp
+            @foreach($revenueByBus as $bus)
+            @php $share = ($bus->total / max($maxRevenue, 0.01)) * 100; @endphp
+            <div class="py-2.5 border-b border-black/[0.05]" title="{{ $bus->bus_id }}">
+                <div class="flex items-baseline justify-between gap-3">
+                    <p class="text-[13px] font-semibold text-ink truncate">{{ $bus->bus_name }}</p>
+                    <p class="text-[13px] font-extrabold tracking-tight whitespace-nowrap {{ $bus->total > 0 ? 'text-emerald-700' : 'text-gray-400' }}">R$ {{ number_format($bus->total, 2, ',', '.') }}</p>
                 </div>
-                @endforeach
+                <div class="mt-1.5 flex items-center gap-2">
+                    <div class="h-1.5 flex-1 bg-gray-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-emerald-500 rounded-full" style="width: {{ max(0, $share) }}%"></div>
+                    </div>
+                    <span class="text-[10px] text-muted whitespace-nowrap">{{ $bus->count }} pgto{{ $bus->count === 1 ? '' : 's' }}</span>
+                </div>
+                @if(($bus->refunded_count ?? 0) > 0)
+                <p class="text-[10px] text-red-600 mt-0.5">{{ $bus->refunded_count }} estorno(s) − R$ {{ number_format($bus->refunded_total ?? 0, 2, ',', '.') }}</p>
+                @endif
             </div>
+            @endforeach
         </div>
     </section>
     @endif
 
     <!-- Gráficos -->
     <section class="grid grid-cols-1 xl:grid-cols-5 gap-4">
-        <div class="rep-card rounded-2xl p-5 xl:col-span-3">
+        <div class="rep-card rounded-2xl p-4 xl:col-span-3">
             <div class="flex flex-wrap justify-between items-start gap-2 mb-4">
                 <div>
                     <h3 class="text-base font-bold text-ink">Receita por dia</h3>
                     <p class="text-xs text-muted mt-0.5">{{ $periodLabel }}</p>
                 </div>
             </div>
-            <div class="relative h-72"><canvas id="revenueChart" class="w-full h-full"></canvas></div>
+            <div class="relative h-56"><canvas id="revenueChart" class="w-full h-full"></canvas></div>
         </div>
-        <div class="rep-card rounded-2xl p-5 xl:col-span-2">
+        <div class="rep-card rounded-2xl p-4 xl:col-span-2">
             <div class="mb-4">
                 <h3 class="text-base font-bold text-ink">Pagamentos por status</h3>
                 <p class="text-xs text-muted mt-0.5">Distribuição no período</p>
             </div>
-            <div class="relative h-72"><canvas id="paymentsStatusChart" class="w-full h-full"></canvas></div>
+            <div class="relative h-56"><canvas id="paymentsStatusChart" class="w-full h-full"></canvas></div>
         </div>
     </section>
 
