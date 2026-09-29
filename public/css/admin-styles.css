@@ -7,7 +7,9 @@
    PADRONIZAÇÃO GLOBAL DE TAMANHOS DE FONTE
    ======================================== */
 
-* {
+/* Áreas com .ui-modern (sidebar, topo, dashboard, relatórios) usam a escala
+   de tamanhos do Tailwind; o resto do painel mantém o padrão fixo de 14px. */
+:not(.ui-modern):not(.ui-modern *) {
     font-size: 0.875rem !important; /* 14px - text-sm - PADRÃO GLOBAL */
 }
 
@@ -64,7 +66,7 @@ h3, h4, .text-sm {
    FORMULÁRIOS
    ======================================== */
 
-input, select, textarea, button {
+input:not(.ui-modern *), select:not(.ui-modern *), textarea:not(.ui-modern *), button:not(.ui-modern *) {
     font-size: 0.875rem !important;
 }
 
@@ -72,7 +74,7 @@ input, select, textarea, button {
    TABELAS
    ======================================== */
 
-table, th, td {
+table:not(.ui-modern *), th:not(.ui-modern *), td:not(.ui-modern *) {
     font-size: 0.875rem !important;
 }
 

@@ -3,214 +3,236 @@
 @section('title', 'Dashboard')
 
 @section('content')
-<div id="dashboard-section" class="section-content">
-                    
-    <!-- Hero Banner -->
-    <div class="bg-gradient-to-r from-green-dark via-green to-green-light rounded-xl px-5 py-4 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <div>
-            <p class="text-[10px] font-bold uppercase tracking-widest text-white/60 mb-0.5">Starlink · Tocantins Transporte</p>
-            <h1 class="text-xl font-bold text-white leading-tight">Dashboard</h1>
-            <p class="text-xs text-white/70 mt-0.5">Visão geral do sistema WiFi Tocantins</p>
-        </div>
-        <div class="flex items-center gap-2">
-            <a href="{{ route('admin.mikrotik.remote.index') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/15 border border-white/20 rounded-lg text-xs font-semibold text-white hover:bg-white/25 transition">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/></svg>
-                MikroTik
-            </a>
-            <div class="bg-white/15 border border-white/20 rounded-lg px-3 py-1.5">
-                <p class="text-[10px] text-white/60">Atualizado em</p>
-                <p class="text-xs font-semibold text-white" id="current-datetime">{{ now()->format('d/m/Y H:i') }}</p>
+<div id="dashboard-section" class="section-content ui-modern space-y-6">
+
+    @php
+        $busOnline = \App\Models\Bus::where('last_sync_at', '>=', now()->subMinutes(5))->count();
+        $busTotal = \App\Models\Bus::count();
+        $diff = $stats['daily_revenue'] - $stats['yesterday_revenue'];
+        $onlineCount = $buses->filter(fn($b) => $b->last_sync_at && $b->last_sync_at->diffInMinutes(now()) <= 5)->count();
+        $offlineCount = $buses->count() - $onlineCount;
+        $hour = (int) now()->format('H');
+        $greeting = $hour < 12 ? 'Bom dia' : ($hour < 18 ? 'Boa tarde' : 'Boa noite');
+    @endphp
+
+    <!-- Hero -->
+    <section class="dash-hero relative overflow-hidden rounded-3xl px-6 py-6 sm:px-8 sm:py-7 text-white">
+        <div class="pointer-events-none absolute -top-24 -right-16 w-72 h-72 rounded-full bg-emerald-400/20 blur-3xl"></div>
+        <div class="pointer-events-none absolute -bottom-28 left-1/3 w-72 h-72 rounded-full bg-lime-300/10 blur-3xl"></div>
+
+        <div class="relative flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200/80">Starlink · Tocantins Transporte</p>
+                <p class="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight">{{ $greeting }}, {{ strtok(Auth::user()->name, ' ') }} 👋</p>
+                <p class="mt-1 text-sm text-white/70">Visão geral do sistema WiFi Tocantins</p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <div class="rounded-2xl bg-white/10 ring-1 ring-white/15 backdrop-blur px-4 py-2.5">
+                    <p class="text-[11px] text-white/60 leading-none">Receita hoje</p>
+                    <p class="mt-1 text-lg font-extrabold leading-none">R$ {{ number_format($stats['daily_revenue'], 2, ',', '.') }}</p>
+                </div>
+                <div class="rounded-2xl bg-white/10 ring-1 ring-white/15 backdrop-blur px-4 py-2.5">
+                    <p class="text-[11px] text-white/60 leading-none">Ônibus online</p>
+                    <p class="mt-1 text-lg font-extrabold leading-none">{{ $busOnline }}<span class="text-white/50 text-sm font-bold">/{{ $busTotal }}</span></p>
+                </div>
+                <div class="rounded-2xl bg-white/10 ring-1 ring-white/15 backdrop-blur px-4 py-2.5">
+                    <p class="text-[11px] text-white/60 leading-none">Atualizado em</p>
+                    <p class="mt-1 text-sm font-bold leading-none" id="current-datetime">{{ now()->format('d/m/Y H:i') }}</p>
+                </div>
+                <a href="{{ route('admin.mikrotik.remote.index') }}" class="inline-flex items-center gap-2 rounded-2xl bg-white text-green-dark px-4 py-3 text-sm font-bold shadow-lg shadow-black/10 hover:bg-emerald-50 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/></svg>
+                    Painel MikroTik
+                </a>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- Status do Sistema - Cards horizontais com STATUS REAL -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        @php
-            $statusItems = [
-                ['key' => 'mikrotik', 'label' => 'MikroTik', 'icon' => 'M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01', 'color' => 'blue'],
-                ['key' => 'database', 'label' => 'Database', 'icon' => 'M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4', 'color' => 'purple'],
-                ['key' => 'pagamentos', 'label' => 'Pagamentos', 'icon' => 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z', 'color' => 'amber'],
-                ['key' => 'api_sync', 'label' => 'API Sync', 'icon' => 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15', 'color' => 'cyan'],
-            ];
-        @endphp
-        @foreach($statusItems as $item)
+    <!-- Status do Sistema -->
+    <section class="dash-card rounded-2xl p-2">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
             @php
-                $s = $system_status[$item['key']] ?? ['online' => false, 'detail' => 'Desconhecido'];
-                $isWarning = $s['warning'] ?? false;
-                $dotColor  = $s['online'] ? ($isWarning ? 'bg-gold' : 'bg-green') : 'bg-red';
-                $textColor = $s['online'] ? ($isWarning ? 'text-gold' : 'text-green') : 'text-red';
-                $borderColor = $s['online'] ? ($isWarning ? 'border-gold/30' : 'border-green/30') : 'border-red/30';
-                $iconBg    = $s['online'] ? ($isWarning ? 'bg-gold-pale' : 'bg-green-pale') : 'bg-red-pale';
-                $iconColor = $s['online'] ? ($isWarning ? 'text-gold' : 'text-green') : 'text-red';
+                $statusItems = [
+                    ['key' => 'mikrotik', 'label' => 'MikroTik', 'icon' => 'M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01'],
+                    ['key' => 'database', 'label' => 'Database', 'icon' => 'M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4'],
+                    ['key' => 'pagamentos', 'label' => 'Pagamentos', 'icon' => 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z'],
+                    ['key' => 'api_sync', 'label' => 'API Sync', 'icon' => 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'],
+                ];
             @endphp
-            <div class="bg-white rounded-xl border {{ $borderColor }} shadow-card p-3 flex items-center gap-3 hover:shadow-hover transition-all">
-                <div class="w-9 h-9 {{ $iconBg }} rounded-lg flex items-center justify-center flex-shrink-0">
-                    <svg class="w-4 h-4 {{ $iconColor }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $item['icon'] }}"/></svg>
-                </div>
-                <div class="min-w-0">
-                    <p class="text-[11px] text-muted font-medium truncate">{{ $item['label'] }}</p>
-                    <div class="flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full {{ $dotColor }} {{ $s['online'] && !$isWarning ? 'animate-pulse' : '' }}"></span>
-                        <span class="text-xs font-semibold {{ $textColor }} truncate">{{ $s['detail'] }}</span>
+            @foreach($statusItems as $item)
+                @php
+                    $s = $system_status[$item['key']] ?? ['online' => false, 'detail' => 'Desconhecido'];
+                    $isWarning = $s['warning'] ?? false;
+                    $tone = $s['online'] ? ($isWarning ? 'amber' : 'emerald') : 'red';
+                    $toneClasses = [
+                        'emerald' => ['bg' => 'bg-emerald-50', 'icon' => 'text-emerald-600', 'dot' => 'bg-emerald-500', 'text' => 'text-emerald-700'],
+                        'amber'   => ['bg' => 'bg-amber-50',   'icon' => 'text-amber-600',   'dot' => 'bg-amber-500',   'text' => 'text-amber-700'],
+                        'red'     => ['bg' => 'bg-red-50',     'icon' => 'text-red-600',     'dot' => 'bg-red-500',     'text' => 'text-red-700'],
+                    ][$tone];
+                @endphp
+                <div class="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-gray-50 transition-colors">
+                    <div class="w-10 h-10 {{ $toneClasses['bg'] }} rounded-xl flex items-center justify-center flex-shrink-0">
+                        <svg class="w-5 h-5 {{ $toneClasses['icon'] }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $item['icon'] }}"/></svg>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-xs font-semibold text-muted">{{ $item['label'] }}</p>
+                        <div class="flex items-center gap-1.5 mt-0.5">
+                            <span class="relative flex w-2 h-2 flex-shrink-0">
+                                @if($s['online'] && !$isWarning)
+                                <span class="absolute inline-flex h-full w-full rounded-full {{ $toneClasses['dot'] }} opacity-60 animate-ping"></span>
+                                @endif
+                                <span class="relative inline-flex w-2 h-2 rounded-full {{ $toneClasses['dot'] }}"></span>
+                            </span>
+                            <span class="text-sm font-bold {{ $toneClasses['text'] }} truncate">{{ $s['detail'] }}</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-        @endforeach
-    </div>
+            @endforeach
+        </div>
+    </section>
 
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        
-        <!-- Usuários Conectados -->
-        <div class="bg-white rounded-xl shadow-card border border-border p-5 hover:shadow-hover transition-all">
+    <!-- KPIs principais -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+
+        <!-- Ônibus online -->
+        <div class="dash-card rounded-2xl p-5">
             <div class="flex items-center justify-between">
-                <div class="w-11 h-11 bg-green-pale rounded-xl flex items-center justify-center">
-                    <svg class="w-5 h-5 text-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
-                    </svg>
-                </div>
-                <div class="text-right">
-                    @php
-                        $busOnline = \App\Models\Bus::where('last_sync_at', '>=', now()->subMinutes(5))->count();
-                        $busTotal = \App\Models\Bus::count();
-                    @endphp
-                    <p class="text-2xl font-bold text-ink">{{ $busOnline }}/{{ $busTotal }}</p>
-                    <p class="text-[11px] text-muted">Onibus online</p>
+                <p class="text-sm font-semibold text-muted">Ônibus online</p>
+                <div class="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
+                    <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/></svg>
                 </div>
             </div>
-            <div class="mt-4 flex items-center justify-between">
-                <span class="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider bg-green/10 text-green px-1.5 py-0.5 rounded">
-                    <span class="w-1.5 h-1.5 bg-green rounded-full animate-pulse"></span>MikroTik
+            <p class="mt-3 text-3xl font-extrabold text-ink tracking-tight">{{ $busOnline }}<span class="text-lg text-muted font-bold">/{{ $busTotal }}</span></p>
+            <div class="mt-4 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-emerald-400 to-green-600 rounded-full" style="width: {{ $busTotal > 0 ? round($busOnline / $busTotal * 100) : 0 }}%"></div>
+            </div>
+            <div class="mt-3 flex items-center justify-between text-xs">
+                <span class="inline-flex items-center gap-1.5 font-semibold text-emerald-700">
+                    <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>MikroTik
                 </span>
                 @if($busTotal - $busOnline > 0)
-                    <span class="text-[11px] font-semibold text-muted">{{ $busTotal - $busOnline }} offline</span>
+                    <span class="font-semibold text-muted">{{ $busTotal - $busOnline }} offline</span>
                 @endif
             </div>
         </div>
 
-        <!-- Receita Hoje -->
-        <div class="bg-white rounded-xl shadow-card border border-border p-5 hover:shadow-hover transition-all">
+        <!-- Receita hoje -->
+        <div class="dash-card rounded-2xl p-5">
             <div class="flex items-center justify-between">
-                <div class="w-11 h-11 bg-gold-pale rounded-xl flex items-center justify-center">
-                    <svg class="w-5 h-5 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                </div>
-                <div class="text-right">
-                    <p class="text-2xl font-bold text-ink">R$ {{ number_format($stats['daily_revenue'], 2, ',', '.') }}</p>
-                    <p class="text-[11px] text-muted">Receita hoje</p>
+                <p class="text-sm font-semibold text-muted">Receita hoje</p>
+                <div class="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center">
+                    <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </div>
             </div>
-            <div class="mt-4 flex items-center justify-between text-[11px]">
-                <span class="text-muted">{{ $stats['today_payments_count'] ?? 0 }} pagamentos</span>
-                @php $diff = $stats['daily_revenue'] - $stats['yesterday_revenue']; @endphp
-                <span class="{{ $diff >= 0 ? 'text-green font-semibold' : 'text-red font-semibold' }}">
-                    {{ $diff >= 0 ? '+' : '' }}R$ {{ number_format($diff, 2, ',', '.') }}
+            <p class="mt-3 text-3xl font-extrabold text-ink tracking-tight">R$ {{ number_format($stats['daily_revenue'], 2, ',', '.') }}</p>
+            <div class="mt-4 flex items-center justify-between text-xs">
+                <span class="text-muted font-medium">{{ $stats['today_payments_count'] ?? 0 }} pagamentos</span>
+                <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-bold {{ $diff >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700' }}">
+                    {{ $diff >= 0 ? '▲' : '▼' }} {{ $diff >= 0 ? '+' : '' }}R$ {{ number_format($diff, 2, ',', '.') }}
                 </span>
             </div>
+            <p class="mt-1.5 text-[11px] text-muted">comparado a ontem</p>
         </div>
 
-        <!-- Receita Semana -->
-        <div class="bg-white rounded-xl shadow-card border border-border p-5 hover:shadow-hover transition-all">
+        <!-- Receita semana -->
+        <div class="dash-card rounded-2xl p-5">
             <div class="flex items-center justify-between">
-                <div class="w-11 h-11 bg-blue-pale rounded-xl flex items-center justify-center">
-                    <svg class="w-5 h-5 text-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                    </svg>
-                </div>
-                <div class="text-right">
-                    <p class="text-2xl font-bold text-ink">R$ {{ number_format($stats['week_revenue'], 2, ',', '.') }}</p>
-                    <p class="text-[11px] text-muted">Últimos 7 dias</p>
+                <p class="text-sm font-semibold text-muted">Últimos 7 dias</p>
+                <div class="w-10 h-10 bg-sky-50 rounded-xl flex items-center justify-center">
+                    <svg class="w-5 h-5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
                 </div>
             </div>
-            <div class="mt-4 flex items-center justify-between text-[11px]">
-                <span class="text-muted">Ontem: R$ {{ number_format($stats['yesterday_revenue'], 2, ',', '.') }}</span>
-                <span class="text-muted">{{ $stats['yesterday_payments_count'] ?? 0 }} pgtos</span>
+            <p class="mt-3 text-3xl font-extrabold text-ink tracking-tight">R$ {{ number_format($stats['week_revenue'], 2, ',', '.') }}</p>
+            <div class="mt-4 flex items-center justify-between text-xs">
+                <span class="text-muted font-medium">Ontem: <span class="font-bold text-ink2">R$ {{ number_format($stats['yesterday_revenue'], 2, ',', '.') }}</span></span>
+                <span class="text-muted font-medium">{{ $stats['yesterday_payments_count'] ?? 0 }} pgtos</span>
             </div>
         </div>
 
-        <!-- Pagamentos Pendentes -->
-        <div class="bg-white rounded-xl shadow-card border {{ $stats['pending_payments_count'] > 0 ? 'border-gold/40' : 'border-border' }} p-5 hover:shadow-hover transition-all">
+        <!-- Pendentes -->
+        @php $hasPending = $stats['pending_payments_count'] > 0; @endphp
+        <div class="dash-card rounded-2xl p-5 {{ $hasPending ? 'ring-2 ring-amber-300/60' : '' }}">
             <div class="flex items-center justify-between">
-                <div class="w-11 h-11 {{ $stats['pending_payments_count'] > 0 ? 'bg-gold-pale' : 'bg-surface' }} rounded-xl flex items-center justify-center">
-                    <svg class="w-5 h-5 {{ $stats['pending_payments_count'] > 0 ? 'text-gold' : 'text-muted' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                </div>
-                <div class="text-right">
-                    <p class="text-2xl font-bold {{ $stats['pending_payments_count'] > 0 ? 'text-gold' : 'text-ink' }}">{{ $stats['pending_payments_count'] }}</p>
-                    <p class="text-[11px] text-muted">Pendentes hoje</p>
+                <p class="text-sm font-semibold text-muted">Pendentes hoje</p>
+                <div class="w-10 h-10 {{ $hasPending ? 'bg-amber-50' : 'bg-gray-100' }} rounded-xl flex items-center justify-center">
+                    <svg class="w-5 h-5 {{ $hasPending ? 'text-amber-600' : 'text-muted' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </div>
             </div>
-            <div class="mt-4 flex items-center justify-between text-[11px]">
-                <span class="text-muted">R$ {{ number_format($stats['pending_payments'], 2, ',', '.') }}</span>
-                <span class="text-muted">aguardando PIX</span>
+            <p class="mt-3 text-3xl font-extrabold tracking-tight {{ $hasPending ? 'text-amber-600' : 'text-ink' }}">{{ $stats['pending_payments_count'] }}</p>
+            <div class="mt-4 flex items-center justify-between text-xs">
+                <span class="text-muted font-medium">R$ {{ number_format($stats['pending_payments'], 2, ',', '.') }}</span>
+                <span class="text-muted font-medium">aguardando PIX</span>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- Info Cards Row -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        <div class="bg-white rounded-xl border border-border shadow-card p-4 text-center hover:shadow-hover transition-all">
-            <p class="text-xl font-bold text-ink">{{ $stats['total_users'] }}</p>
-            <p class="text-[11px] text-muted mt-0.5">Total Usuários</p>
-        </div>
-        <div class="bg-white rounded-xl border border-border shadow-card p-4 text-center hover:shadow-hover transition-all">
-            <p class="text-xl font-bold text-ink">{{ $stats['total_devices'] }}</p>
-            <p class="text-[11px] text-muted mt-0.5">Dispositivos</p>
-        </div>
-        <div class="bg-white rounded-xl border border-border shadow-card p-4 text-center hover:shadow-hover transition-all">
-            <p class="text-xl font-bold text-green">{{ $stats['active_vouchers'] }}</p>
-            <p class="text-[11px] text-muted mt-0.5">Vouchers Ativos</p>
-        </div>
-        <div class="bg-white rounded-xl border border-border shadow-card p-4 text-center hover:shadow-hover transition-all">
-            <p class="text-xl font-bold text-ink">R$ {{ number_format($stats['month_revenue'], 2, ',', '.') }}</p>
-            <p class="text-[11px] text-muted mt-0.5">Receita 30 dias</p>
-        </div>
-    </div>
-
-    <!-- Charts Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        <div class="bg-white rounded-xl shadow-card border border-border p-5 hover:shadow-hover transition-all">
-            <div class="flex items-center justify-between border-b border-border pb-3 mb-4">
-                <h3 class="text-sm font-bold text-ink">Receita dos Últimos 7 Dias</h3>
-                <span class="text-[11px] text-muted">R$ {{ number_format(array_sum($revenue_chart['data']), 2, ',', '.') }} total</span>
+    <!-- Indicadores gerais -->
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        @php
+            $miniStats = [
+                ['label' => 'Total de usuários', 'value' => number_format($stats['total_users'], 0, ',', '.'), 'tone' => 'text-ink', 'icon' => 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z'],
+                ['label' => 'Dispositivos', 'value' => number_format($stats['total_devices'], 0, ',', '.'), 'tone' => 'text-ink', 'icon' => 'M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z'],
+                ['label' => 'Vouchers ativos', 'value' => $stats['active_vouchers'], 'tone' => 'text-emerald-600', 'icon' => 'M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z'],
+                ['label' => 'Receita 30 dias', 'value' => 'R$ ' . number_format($stats['month_revenue'], 2, ',', '.'), 'tone' => 'text-ink', 'icon' => 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'],
+            ];
+        @endphp
+        @foreach($miniStats as $mini)
+        <div class="dash-card rounded-2xl px-4 py-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-ink2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $mini['icon'] }}"/></svg>
             </div>
-            <div style="height: 200px;">
+            <div class="min-w-0">
+                <p class="text-xl font-extrabold tracking-tight {{ $mini['tone'] }} truncate">{{ $mini['value'] }}</p>
+                <p class="text-xs text-muted font-medium">{{ $mini['label'] }}</p>
+            </div>
+        </div>
+        @endforeach
+    </section>
+
+    <!-- Gráficos -->
+    <section class="grid grid-cols-1 xl:grid-cols-5 gap-4">
+        <div class="dash-card rounded-2xl p-5 xl:col-span-3">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <h3 class="text-base font-bold text-ink">Receita dos últimos 7 dias</h3>
+                    <p class="text-xs text-muted mt-0.5">Pagamentos confirmados por dia</p>
+                </div>
+                <span class="rounded-full bg-emerald-50 text-emerald-700 px-3 py-1 text-xs font-bold">R$ {{ number_format(array_sum($revenue_chart['data']), 2, ',', '.') }}</span>
+            </div>
+            <div style="height: 240px;">
                 <canvas id="revenueChart"></canvas>
             </div>
         </div>
-        <div class="bg-white rounded-xl shadow-card border border-border p-5 hover:shadow-hover transition-all">
-            <div class="flex items-center justify-between border-b border-border pb-3 mb-4">
-                <h3 class="text-sm font-bold text-ink">Conexões por Hora</h3>
-                <span class="text-[11px] text-muted">Últimas 12h</span>
+        <div class="dash-card rounded-2xl p-5 xl:col-span-2">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <h3 class="text-base font-bold text-ink">Conexões por hora</h3>
+                    <p class="text-xs text-muted mt-0.5">Últimas 12 horas</p>
+                </div>
             </div>
-            <div style="height: 200px;">
+            <div style="height: 240px;">
                 <canvas id="connectionsChart"></canvas>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- Onibus Cadastrados -->
-    <div class="bg-white rounded-xl shadow-card border border-border">
-        <div class="flex justify-between items-center border-b border-border px-4 py-3">
+    <!-- Ônibus cadastrados -->
+    <section class="dash-card rounded-2xl overflow-hidden">
+        <div class="flex flex-wrap justify-between items-center gap-3 px-5 py-4 border-b border-black/[0.06]">
             <div>
-                <h3 class="text-sm font-bold text-ink">Onibus Cadastrados</h3>
-                <p class="text-[11px] text-muted">
-                    @php
-                        $onlineCount = $buses->filter(fn($b) => $b->last_sync_at && $b->last_sync_at->diffInMinutes(now()) <= 5)->count();
-                        $offlineCount = $buses->count() - $onlineCount;
-                    @endphp
-                    <span class="text-green font-semibold">{{ $onlineCount }} online</span> · <span class="text-muted">{{ $offlineCount }} offline</span> · {{ $buses->count() }} total
-                </p>
+                <h3 class="text-base font-bold text-ink">Ônibus cadastrados</h3>
+                <div class="mt-1 flex items-center gap-2 text-xs">
+                    <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 font-bold"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>{{ $onlineCount }} online</span>
+                    <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 text-muted px-2 py-0.5 font-bold"><span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>{{ $offlineCount }} offline</span>
+                    <span class="text-muted font-medium">{{ $buses->count() }} no total</span>
+                </div>
             </div>
-            <a href="{{ route('admin.mikrotik.remote.index') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-pale text-blue font-semibold rounded-lg text-xs hover:bg-blue/10 transition-colors">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/></svg>
+            <a href="{{ route('admin.mikrotik.remote.index') }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-ink text-white font-bold rounded-xl text-xs hover:bg-ink2 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/></svg>
                 Painel MikroTik
             </a>
         </div>
-        <div class="p-4">
+        <div class="p-5">
             @if($buses->count() > 0)
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                 @foreach($buses as $bus)
@@ -218,42 +240,65 @@
                     $isOnline = $bus->last_sync_at && $bus->last_sync_at->diffInMinutes(now()) <= 5;
                     $syncAgo = $bus->last_sync_at ? $bus->last_sync_at->diffForHumans(short: true) : 'nunca';
                 @endphp
-                <div class="rounded-xl border {{ $isOnline ? 'border-green/30 bg-green/5' : 'border-border bg-white' }} p-4 hover:shadow-hover transition-all">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="flex items-center gap-2">
-                            <span class="w-2.5 h-2.5 rounded-full {{ $isOnline ? 'bg-green animate-pulse' : 'bg-gray-300' }}"></span>
-                            <span class="text-[10px] font-bold uppercase tracking-wider {{ $isOnline ? 'text-green' : 'text-muted' }}">{{ $isOnline ? 'Online' : 'Offline' }}</span>
+                <div class="group rounded-2xl p-4 ring-1 transition-all hover:shadow-md {{ $isOnline ? 'ring-emerald-200 bg-gradient-to-br from-emerald-50/70 to-white' : 'ring-black/[0.06] bg-white' }}">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 {{ $isOnline ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30' : 'bg-gray-100 text-muted' }}">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h8m-8 4h8m-4 4v4m-4-4h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-sm font-bold text-ink truncate">{{ $bus->name ?: 'Sem nome' }}</p>
+                                <p class="text-[11px] text-muted font-mono truncate">{{ $bus->mikrotik_serial }}</p>
+                            </div>
                         </div>
-                        <span class="text-[10px] text-muted font-mono">{{ $bus->mikrotik_serial }}</span>
+                        <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider flex-shrink-0 {{ $isOnline ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-muted' }}">
+                            <span class="w-1.5 h-1.5 rounded-full {{ $isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400' }}"></span>
+                            {{ $isOnline ? 'Online' : 'Offline' }}
+                        </span>
                     </div>
-                    <div class="space-y-1.5">
-                        <p class="text-sm font-bold text-ink">{{ $bus->name ?: 'Sem nome' }}</p>
-                        @if($bus->plate || $bus->route_description)
-                        <div class="flex items-center gap-2 text-[11px] text-muted">
-                            @if($bus->plate)
-                            <span class="inline-flex items-center gap-1 bg-surface px-1.5 py-0.5 rounded font-mono font-semibold">{{ $bus->plate }}</span>
-                            @endif
-                            @if($bus->route_description)
-                            <span class="truncate">{{ $bus->route_description }}</span>
-                            @endif
-                        </div>
+                    @if($bus->plate || $bus->route_description)
+                    <div class="mt-3 flex items-center gap-2 text-xs text-muted min-w-0">
+                        @if($bus->plate)
+                        <span class="inline-flex items-center bg-white ring-1 ring-black/10 px-1.5 py-0.5 rounded-md font-mono font-bold text-ink2 flex-shrink-0">{{ $bus->plate }}</span>
                         @endif
-                        <p class="text-[10px] text-muted">Sync: {{ $syncAgo }} · IP: {{ $bus->last_public_ip ?: '-' }}</p>
+                        @if($bus->route_description)
+                        <span class="truncate">{{ $bus->route_description }}</span>
+                        @endif
+                    </div>
+                    @endif
+                    <div class="mt-3 pt-3 border-t border-black/[0.05] flex items-center justify-between text-[11px] text-muted">
+                        <span>Sync: <span class="font-semibold text-ink2">{{ $syncAgo }}</span></span>
+                        <span class="font-mono">IP: {{ $bus->last_public_ip ?: '-' }}</span>
                     </div>
                 </div>
                 @endforeach
             </div>
             @else
-            <div class="text-center py-10">
-                <div class="w-12 h-12 bg-surface rounded-full flex items-center justify-center mx-auto mb-3">
-                    <svg class="w-6 h-6 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/></svg>
+            <div class="text-center py-12">
+                <div class="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <svg class="w-7 h-7 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/></svg>
                 </div>
-                <p class="text-muted text-sm">Nenhum onibus cadastrado</p>
+                <p class="text-muted text-sm font-medium">Nenhum ônibus cadastrado</p>
             </div>
             @endif
         </div>
-    </div>
+    </section>
 </div>
+
+<style>
+    .dash-hero {
+        background:
+            radial-gradient(90% 120% at 0% 0%, #0f5132 0%, transparent 60%),
+            linear-gradient(135deg, #0C1A13 0%, #0f3d25 55%, #007A28 100%);
+        box-shadow: 0 20px 40px -20px rgba(0, 80, 40, 0.55);
+    }
+    .dash-card {
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 0 0 1px rgba(16, 24, 40, 0.05);
+        transition: box-shadow .2s ease, transform .2s ease;
+    }
+    .dash-card:hover { box-shadow: 0 12px 28px -12px rgba(16, 24, 40, 0.18), 0 0 0 1px rgba(16, 24, 40, 0.06); }
+</style>
 
 <script>
     // Atualizar data/hora
@@ -267,7 +312,7 @@
 
     // Gráfico de Receita
     const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-    const revenueGradient = revenueCtx.createLinearGradient(0, 0, 0, 180);
+    const revenueGradient = revenueCtx.createLinearGradient(0, 0, 0, 230);
     revenueGradient.addColorStop(0, 'rgba(0, 163, 53, 0.25)');
     revenueGradient.addColorStop(1, 'rgba(0, 163, 53, 0.01)');
     
