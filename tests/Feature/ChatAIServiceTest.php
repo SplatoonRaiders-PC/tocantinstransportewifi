@@ -11,6 +11,7 @@ use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\TestCase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 
 class ChatAIServiceTest extends TestCase
@@ -160,6 +161,110 @@ class ChatAIServiceTest extends TestCase
 
         $this->assertSame('mac_request', $reply->type);
         $this->assertStringContainsString('MAC da rede deste iPhone', $reply->message);
+    }
+
+    public function test_typed_mac_that_matches_system_gets_private_dns_steps(): void
+    {
+        Http::fake();
+        [$conversation] = $this->macConversation('63999990006', '52:3F:15:11:AF:AE');
+        $this->visitorMessage($conversation, '52:3f:15:11:af:ae');
+
+        $reply = app(ChatAIService::class)->respond($conversation);
+
+        $this->assertSame('text', $reply->type);
+        $this->assertEmpty($reply->metadata['escalated'] ?? null);
+        $this->assertStringContainsString('é o mesmo que está liberado', $reply->message);
+        $this->assertStringContainsString('DNS privado', $reply->message);
+        $this->assertStringContainsString('Automático', $reply->message);
+        $this->assertStringContainsString('não toque em Esquecer a rede', $reply->message);
+    }
+
+    public function test_typed_mac_different_from_system_escalates_to_human(): void
+    {
+        Http::fake();
+        [$conversation] = $this->macConversation('63999990007', '52:3F:15:11:AF:AE');
+        $this->visitorMessage($conversation, 'AA:BB:CC:DD:EE:FF');
+
+        $reply = app(ChatAIService::class)->respond($conversation);
+
+        $this->assertTrue($reply->metadata['escalated']);
+        $this->assertStringContainsString('diferente do que está liberado', $reply->message);
+        $this->assertStringContainsString('52:3F:15:11:AF:AE', $reply->metadata['reason']);
+        $this->assertSame('pending', $conversation->fresh()->status);
+    }
+
+    public function test_private_dns_steps_failed_escalates_to_human(): void
+    {
+        Http::fake();
+        [$conversation] = $this->macConversation('63999990008', '52:3F:15:11:AF:AE');
+        $this->visitorMessage($conversation, '52:3F:15:11:AF:AE');
+        app(ChatAIService::class)->respond($conversation);
+        $this->visitorMessage($conversation, 'Fiz tudo e ainda não funcionou');
+
+        $reply = app(ChatAIService::class)->respond($conversation);
+
+        $this->assertTrue($reply->metadata['escalated']);
+        $this->assertStringContainsString('DNS privado', $reply->metadata['reason']);
+    }
+
+    public function test_unreadable_mac_photo_asks_to_type_before_escalating(): void
+    {
+        Http::fake();
+        [$conversation] = $this->macConversation('63999990009', '52:3F:15:11:AF:AE');
+        $service = app(ChatAIService::class);
+
+        $first = $service->handleCollectedMac($conversation, null);
+        $second = $service->handleCollectedMac($conversation, null);
+
+        $this->assertStringContainsString('não consegui ler o MAC', $first->message);
+        $this->assertEmpty($first->metadata['escalated'] ?? null);
+        $this->assertTrue($second->metadata['escalated']);
+        $this->assertStringContainsString('DNS privado', $second->message);
+    }
+
+    public function test_reads_mac_from_photo_with_vision_model(): void
+    {
+        config([
+            'services.together.enabled' => true,
+            'services.together.api_key' => 'test-key',
+            'services.together.vision_model' => 'vision-model',
+        ]);
+        Http::fake([
+            '*' => Http::response(['choices' => [['message' => ['content' => '52:3f:15:11:af:ae']]]]),
+        ]);
+        $image = tempnam(sys_get_temp_dir(), 'mac');
+        file_put_contents($image, 'fake-image');
+
+        $mac = app(ChatAIService::class)->readMacFromImage($image, 'image/png');
+        unlink($image);
+
+        $this->assertSame('52:3F:15:11:AF:AE', $mac);
+        Http::assertSent(fn ($request) => $request['model'] === 'vision-model'
+            && str_starts_with($request['messages'][0]['content'][1]['image_url']['url'], 'data:image/png;base64,'));
+    }
+
+    /**
+     * Passageiro com acesso ativo que já respondeu "Android" e recebeu o pedido de MAC.
+     */
+    private function macConversation(string $phone, string $liberatedMac): array
+    {
+        [$conversation, $user] = $this->conversation('Maria', $phone);
+        $user->update([
+            'mac_address' => $liberatedMac,
+            'status' => 'connected',
+            'expires_at' => now()->addHours(10),
+        ]);
+        $this->assistantMessage($conversation, 'Você está usando iOS (iPhone) ou Android?');
+        $this->visitorMessage($conversation, 'Android');
+        ChatMessage::create([
+            'conversation_id' => $conversation->id,
+            'sender_type' => 'admin',
+            'type' => 'mac_request',
+            'message' => 'Manda a foto do MAC',
+            'metadata' => ['ai' => true],
+        ]);
+
+        return [$conversation, $user];
     }
 
     private function conversation(string $name, string $phone): array

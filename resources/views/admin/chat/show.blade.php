@@ -347,6 +347,10 @@
                         @else
                             <p class="text-sm text-gray-500">Arquivo indisponível</p>
                         @endif
+                        @if(!empty($message->metadata['mac_address']))
+                            <p class="text-[10px] font-bold text-sky-700 uppercase tracking-wider mt-3 text-center">MAC lido pela IA</p>
+                            <p class="text-lg font-mono font-bold text-sky-800 tracking-wider text-center select-all">{{ $message->metadata['mac_address'] }}</p>
+                        @endif
                         <p class="text-[10px] text-amber-700 mt-2 font-semibold">⚠ Conferir o MAC na foto e liberar esse aparelho no MikroTik</p>
                     </div>
                 </div>

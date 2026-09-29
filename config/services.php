@@ -63,6 +63,11 @@ return [
         'timeout' => env('CHAT_AI_TIMEOUT', 15),
         'max_turns' => env('CHAT_AI_MAX_TURNS', 10),
         'verify_ssl' => env('CHAT_AI_VERIFY_SSL', true),
+        // Modelo com visão usado para ler o MAC na foto enviada no chat.
+        // Vazio desativa a leitura (a foto vai direto pro atendente, como antes).
+        'vision_model' => env('CHAT_AI_VISION_MODEL', 'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8'),
+        'vision_api_url' => env('CHAT_AI_VISION_API_URL'),
+        'vision_timeout' => env('CHAT_AI_VISION_TIMEOUT', 25),
     ],
 
 ];

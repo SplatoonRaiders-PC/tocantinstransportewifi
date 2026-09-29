@@ -423,6 +423,22 @@ class ChatApiController extends Controller
             'status' => 'pending',
         ]);
 
+        // 🤖 IA lê o MAC na foto e confere com o liberado no sistema antes de chamar o humano
+        $conversation->refresh();
+        if ($this->ai->shouldRespond($conversation)) {
+            $readMac = $this->ai->readMacFromImage(Storage::disk('public')->path($path), $file->getMimeType());
+            if ($readMac) {
+                $message->update(['metadata' => array_merge($message->metadata ?? [], ['mac_address' => $readMac])]);
+                $conversation->update(['visitor_mac' => $readMac]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'ai_reply' => $this->ai->handleCollectedMac($conversation, $readMac),
+            ]);
+        }
+
         $aiAck = ChatMessage::create([
             'conversation_id' => $conversation->id,
             'sender_type' => 'admin',

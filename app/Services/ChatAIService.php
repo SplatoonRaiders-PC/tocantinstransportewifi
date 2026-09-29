@@ -88,12 +88,21 @@ class ChatAIService
     {
         try {
             if ($this->visitorTypedMacAfterRequest($conv)) {
-                $mac = self::extractMacAddress($this->lastVisitorMessage($conv));
-                return $this->actionEscalate(
-                    $conv,
-                    "Recebi o MAC {$mac}. Vou passar pro meu colega liberar esse aparelho. Aguarda só um minutinho!",
-                    'MAC digitado: ' . $mac
-                );
+                return $this->handleCollectedMac($conv, self::extractMacAddress($this->lastVisitorMessage($conv)));
+            }
+
+            // Já mandou o passo a passo do DNS privado: resolveu → encerra; não resolveu → humano.
+            if ($this->alreadySentPrivateDnsSteps($conv)) {
+                if ($this->visitorReportsResolved($conv)) {
+                    return $this->actionReply($conv, 'Que bom que voltou a funcionar! Seu acesso segue liberado. Tenha uma ótima viagem!');
+                }
+                if ($this->visitorSaysStepsFailed($conv)) {
+                    return $this->actionEscalate(
+                        $conv,
+                        'Poxa, desculpa que não resolveu por aqui. Vou passar pro meu colega verificar direto no roteador do ônibus. Aguarda só um minutinho!',
+                        'MAC confere com o sistema, mas o ajuste do DNS privado não resolveu'
+                    );
+                }
             }
 
             // Casos de pagamento precisam usar o estado real do banco antes de consultar o modelo.
@@ -464,6 +473,7 @@ Usuário pagou e tá ativo, mas reclama de internet. PROBLEMA TÉCNICO.
    "Oi {$conv->visitor_name}! Vi aqui que seu pagamento tá ativo. Pra te ajudar, me fala: você está usando iOS (iPhone) ou Android?"
 
 2. **Quando ele responder iOS / iPhone / Android:** use **request_mac** na hora (passo a passo pra achar o MAC daquele aparelho + botão de foto). NUNCA escalate nesse turno. NUNCA peça só pra desativar endereço privado e parar.
+   O sistema confere sozinho o MAC recebido (foto ou digitado) com o MAC liberado. Se for o mesmo, ele já manda o passo a passo do DNS privado; se for diferente, passa pro humano.
 
 3. **Se não resolveu, mande o probe:** "Hmm. Deixa eu mandar um teste rápido pra ver como tá seu sinal." → **request_probe**
 
@@ -587,6 +597,7 @@ Se pediu atendente de verdade: "Claro, {$conv->visitor_name}! Já vou passar pro
 - **Esquecer rede**: Ajustes → Wi-Fi → (i) → "Esquecer Esta Rede" → reconecta.
 
 ## Android
+- **DNS privado** (pagou, MAC confere, mas nenhum site abre / "não é possível acessar esse site"): Configurações → Conexões → Mais configurações de conexão → DNS privado → Automático (ou Desativado) → desliga e liga o WiFi. Em outros Android: Configurações → Rede e internet → DNS privado.
 - **MAC aleatório** (causa #1): Configurações → Wi-Fi → segura na rede → "Modificar"/"Avançado" → "Privacidade"/"Tipo de endereço MAC" → muda pra "MAC do dispositivo" → reconecta.
 - **Portal não aparece**: Chrome → acessa **{$portalHost}** ou **http://google.com** → toca em "Fazer login na rede" se aparecer. Senão, desconecta e reconecta.
 - **Dados móveis interferindo**: desativa "Mudar para dados móveis automaticamente" (Samsung: "Dados móveis inteligentes"; Xiaomi: "Assistente Wi-Fi").
@@ -1000,6 +1011,202 @@ PROMPT;
         return $msg;
     }
 
+    /**
+     * MAC recebido (digitado ou lido da foto): confere com o que está liberado no sistema.
+     * - Confere → o acesso está ativo; o culpado costuma ser o DNS privado do celular.
+     * - Diferente → humano libera o aparelho certo.
+     * - Foto ilegível → pede pra digitar; na segunda vez, humano.
+     */
+    public function handleCollectedMac(ChatConversation $conv, ?string $mac): ChatMessage
+    {
+        $device = $this->visitorDeviceFromHistory($conv) ?? 'both';
+
+        if (!$mac) {
+            $alreadyAskedToType = ChatMessage::where('conversation_id', $conv->id)
+                ->where('sender_type', 'admin')
+                ->whereNull('admin_id')
+                ->where('message', 'like', '%consegui ler o MAC%')
+                ->exists();
+
+            if (!$alreadyAskedToType) {
+                return $this->actionReply(
+                    $conv,
+                    'Recebi a foto, mas não consegui ler o MAC nela. Pode escrever o código aqui? Fica em Endereço MAC (tipo AA:BB:CC:DD:EE:FF).'
+                );
+            }
+
+            return $this->actionEscalate(
+                $conv,
+                "Vou passar pro meu colega conferir a foto e liberar o aparelho. Enquanto isso, tenta este ajuste:\n\n"
+                    . $this->privateDnsStepsMessage($device),
+                'foto do MAC enviada (IA não conseguiu ler o MAC)'
+            );
+        }
+
+        if (!$this->macIsLiberated($mac)) {
+            $liberated = implode(', ', $this->liberatedMacsForConversation($conv)) ?: 'nenhum';
+            return $this->actionEscalate(
+                $conv,
+                "Conferi aqui: o MAC do seu celular ({$mac}) é diferente do que está liberado no sistema. Vou passar pro meu colega liberar este aparelho. Aguarda só um minutinho!",
+                "MAC do aparelho {$mac} não está liberado (liberado no sistema: {$liberated})"
+            );
+        }
+
+        if ($this->alreadySentPrivateDnsSteps($conv)) {
+            return $this->actionEscalate(
+                $conv,
+                "O MAC {$mac} confere com o sistema. Vou passar pro meu colega verificar direto no roteador do ônibus. Aguarda só um minutinho!",
+                "MAC {$mac} confere com o sistema e o DNS privado já foi orientado"
+            );
+        }
+
+        Log::info('🤖 MAC confere com o sistema — orientando DNS privado', [
+            'conversation_id' => $conv->id,
+            'mac' => $mac,
+        ]);
+
+        return $this->actionReply(
+            $conv,
+            "Conferi aqui: o MAC {$mac} é o mesmo que está liberado no sistema, então seu acesso está ativo. ✅\n\n"
+                . "Quando isso acontece e nenhum site abre, o que costuma travar é o DNS privado do celular. Faz assim:\n\n"
+                . $this->privateDnsStepsMessage($device)
+                . "\n\nVoltou a navegar?"
+        );
+    }
+
+    /**
+     * Lê o MAC na foto da tela de detalhes do Wi-Fi usando um modelo com visão.
+     * Retorna null se a leitura estiver desativada, falhar ou não houver MAC legível.
+     */
+    public function readMacFromImage(string $path, ?string $mime = null): ?string
+    {
+        $model = config('services.together.vision_model');
+        if (!$this->isEnabled() || !$model || !is_file($path)) {
+            return null;
+        }
+
+        $mime = $mime ?: (mime_content_type($path) ?: 'image/jpeg');
+        $dataUrl = 'data:' . $mime . ';base64,' . base64_encode((string) file_get_contents($path));
+
+        try {
+            $http = Http::timeout((int) config('services.together.vision_timeout', 25))
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . config('services.together.api_key'),
+                    'Content-Type' => 'application/json',
+                ]);
+
+            if (!config('services.together.verify_ssl', true)) {
+                $http = $http->withoutVerifying();
+            }
+
+            $response = $http->post(config('services.together.vision_api_url') ?: config('services.together.api_url'), [
+                'model' => $model,
+                'max_tokens' => 60,
+                'temperature' => 0,
+                'stream' => false,
+                'messages' => [[
+                    'role' => 'user',
+                    'content' => [
+                        [
+                            'type' => 'text',
+                            'text' => 'Esta é uma captura da tela de detalhes do Wi-Fi de um celular. '
+                                . 'Responda somente com o endereço MAC do Wi-Fi mostrado (Endereço MAC, Endereço Wi-Fi ou MAC do dispositivo), '
+                                . 'no formato AA:BB:CC:DD:EE:FF. Ignore endereços IP e IPv6. Se não houver MAC legível, responda NENHUM.',
+                        ],
+                        ['type' => 'image_url', 'image_url' => ['url' => $dataUrl]],
+                    ],
+                ]],
+            ]);
+
+            if (!$response->successful()) {
+                Log::warning('🤖 Leitura do MAC na foto falhou', [
+                    'status' => $response->status(),
+                    'body' => substr($response->body(), 0, 300),
+                    'model' => $model,
+                ]);
+                return null;
+            }
+
+            $mac = self::extractMacAddress((string) $response->json('choices.0.message.content'));
+            Log::info('🤖 MAC lido na foto', ['mac' => $mac]);
+
+            return $mac;
+        } catch (\Throwable $e) {
+            Log::warning('🤖 Erro ao ler MAC na foto', ['error' => $e->getMessage()]);
+            return null;
+        }
+    }
+
+    private function macIsLiberated(string $mac): bool
+    {
+        return User::whereRaw('UPPER(mac_address) = ?', [strtoupper($mac)])
+            ->whereIn('status', ['connected', 'active', 'temp_bypass'])
+            ->where('expires_at', '>', now())
+            ->exists();
+    }
+
+    /**
+     * MACs liberados ligados a esta conversa (telefone/usuário vinculado) — só pro motivo da escalada.
+     *
+     * @return array<int, string>
+     */
+    private function liberatedMacsForConversation(ChatConversation $conv): array
+    {
+        $user = $this->paymentContext($conv)['user'];
+        $phoneTail = substr(preg_replace('/\D/', '', (string) $conv->visitor_phone), -9);
+
+        $query = User::whereIn('status', ['connected', 'active', 'temp_bypass'])
+            ->where('expires_at', '>', now())
+            ->whereNotNull('mac_address');
+
+        if (strlen($phoneTail) >= 8) {
+            $query->where(function ($q) use ($phoneTail, $user) {
+                $q->where('phone', 'like', '%' . $phoneTail);
+                if ($user) {
+                    $q->orWhere('id', $user->id);
+                }
+            });
+        } elseif ($user) {
+            $query->where('id', $user->id);
+        } else {
+            return [];
+        }
+
+        return $query->pluck('mac_address')->map(fn ($m) => strtoupper((string) $m))->unique()->values()->all();
+    }
+
+    private function privateDnsStepsMessage(string $device): string
+    {
+        $android = "1) Abra Configurações → Conexões → Mais configurações de conexão → DNS privado (em outros Android: Configurações → Rede e internet → DNS privado).\n\n"
+            . "2) Escolha Automático (ou Desativado) e salve.\n\n"
+            . "3) Desligue e ligue o WiFi, ou troque de rede e volte para a TocantinsTransporteWiFi.";
+
+        $ios = "1) Desative VPN ou app de bloqueio de anúncios (Ajustes → VPN).\n\n"
+            . "2) Em Ajustes → Wi-Fi → toque no (i) da TocantinsTransporteWiFi → Configurar DNS → Automático.\n\n"
+            . "3) Desligue e ligue o WiFi e volte para a TocantinsTransporteWiFi.";
+
+        $warning = "Importante: não toque em Esquecer a rede e não mude o tipo de endereço MAC / Endereço Privado, senão o celular troca de MAC e perde a liberação.";
+
+        return match ($device) {
+            'ios' => $ios . "\n\n" . $warning,
+            'android' => $android . "\n\n" . $warning,
+            default => "Android:\n\n" . $android . "\n\niPhone: desative VPN e, em Ajustes → Wi-Fi → (i) → Configurar DNS, deixe Automático.\n\n" . $warning,
+        };
+    }
+
+    private function alreadySentPrivateDnsSteps(ChatConversation $conv): bool
+    {
+        return ChatMessage::where('conversation_id', $conv->id)
+            ->where('sender_type', 'admin')
+            ->whereNull('admin_id')
+            ->where('created_at', '>=', now()->subHours(6))
+            ->where(function ($q) {
+                $q->where('message', 'like', '%DNS privado%')
+                    ->orWhere('message', 'like', '%Configurar DNS%');
+            })
+            ->exists();
+    }
+
     private function actionEscalate(ChatConversation $conv, string $text, ?string $reason): ChatMessage
     {
         $msg = ChatMessage::create([
@@ -1288,8 +1495,8 @@ PROMPT;
             || $this->visitorHasActiveAccess($conv)
             || $this->alreadyAskedDevice($conv);
 
-        $iaTriedToEscalate = in_array($action, ['escalate', 'request_probe'], true)
-            && ($this->alreadySentPaymentSteps($conv) || $this->visitorHasActiveAccess($conv));
+        // Pagamento válido já foi confirmado acima: antes de escalar, sempre coleta o MAC.
+        $iaTriedToEscalate = in_array($action, ['escalate', 'request_probe'], true);
 
         if (!(($insists && $alreadyHelped) || $iaTriedToEscalate)) {
             return $decision;
